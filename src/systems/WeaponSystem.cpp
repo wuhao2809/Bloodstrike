@@ -4,7 +4,7 @@
 #include <cmath>
 #include <iostream>
 
-WeaponSystem::WeaponSystem(EntityFactory *factory) : entityFactory(factory)
+WeaponSystem::WeaponSystem(EntityFactory *factory, AudioSystem *audio) : entityFactory(factory), audioSystem(audio)
 {
 }
 
@@ -71,6 +71,12 @@ void WeaponSystem::handlePlayerShooting(ECS &ecs, float deltaTime)
         // Create projectile
         EntityID projectileEntity = createProjectile(ecs, transform->x, transform->y,
                                                      dirX, dirY, *weapon, entityID, 500.0f, true);
+
+        // Play gun shot sound
+        if (audioSystem)
+        {
+            audioSystem->playSound("gunshot");
+        }
 
         // Update weapon state
         weapon->ammoCount--;

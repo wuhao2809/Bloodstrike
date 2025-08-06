@@ -3,14 +3,16 @@
 #include "../core/ECS.h"
 #include "../managers/GameManager.h"
 #include "../managers/EntityFactory.h"
+#include "../systems/AudioSystem.h"
 
 class WeaponSystem : public System
 {
 private:
     EntityFactory *entityFactory;
+    AudioSystem *audioSystem;
 
 public:
-    WeaponSystem(EntityFactory *factory);
+    WeaponSystem(EntityFactory *factory, AudioSystem *audio);
     ~WeaponSystem();
 
     void update(ECS &ecs, GameManager &gameManager, float deltaTime) override;

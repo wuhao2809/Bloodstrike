@@ -102,7 +102,7 @@ bool Game::initialize()
 
     // Initialize Bloodstrike 2D combat systems
     aimingSystem = std::make_unique<AimingSystem>();
-    weaponSystem = std::make_unique<WeaponSystem>(entityFactory.get());
+    weaponSystem = std::make_unique<WeaponSystem>(entityFactory.get(), audioSystem.get());
     projectileSystem = std::make_unique<ProjectileSystem>();
 
     // Initialize audio system

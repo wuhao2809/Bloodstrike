@@ -142,6 +142,10 @@
       "gameOver": {
         "name": "gameover",
         "file": "art/gameover.wav"
+      },
+      "gunShot": {
+        "name": "gunshot",
+        "file": "art/ak47.mp3"
       }
     },
     "settings": {
