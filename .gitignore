@@ -1,0 +1,220 @@
+# Bloodstrike 2D - C++ Game Project .gitignore
+
+# Build directories and artifacts
+build/
+bin/
+lib/
+obj/
+out/
+Debug/
+Release/
+RelWithDebInfo/
+MinSizeRel/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Executable files
+Bloodstrike
+DodgeTheCreeps
+*.exe
+*.app
+*.dSYM/
+
+# Compiled Object files
+*.o
+*.obj
+*.ko
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# IDE and Editor files
+.vscode/
+.vs/
+*.vcxproj*
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
+*~
+
+# Xcode (macOS)
+*.xcodeproj/
+*.xcworkspace/
+build/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Package managers
+conan.lock
+conanbuildinfo.*
+conaninfo.txt
+conandata.yml
+
+# Game specific files that might be generated
+logs/
+*.log
+screenshots/
+saves/
+config.ini
+settings.cfg
+
+# Asset files that might be too large (uncomment if needed)
+# *.png
+# *.jpg
+# *.jpeg
+# *.gif
+# *.wav
+# *.mp3
+# *.ogg
+# *.ttf
+# *.otf
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Temporary files
+*.tmp
+*.temp
+*_temp
+*_tmp
+
+# Documentation build
+docs/_build/
+docs/html/
+docs/latex/
+
+# Unit test / coverage reports
+*.gcda
+*.gcno
+*.gcov
+coverage.xml
+*.cover
+htmlcov/
+
+# Cache files
+.cache/
+*.cache
+
+# Profiling data
+*.prof
+gmon.out
+callgrind.out.*
+perf.data*
+
+# Valgrind output
+*.valgrind
+
+# Address Sanitizer output
+*.asan
+
+# Thread Sanitizer output
+*.tsan
+
+# Memory Sanitizer output
+*.msan
+
+# Static analysis
+cppcheck-output.xml
+scan-build-*/
+
+# Dependency directories
+vcpkg_installed/
+_deps/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Network related (for future multiplayer development)
+*.pcap
+*.cap

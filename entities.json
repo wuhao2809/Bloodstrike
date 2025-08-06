@@ -1,0 +1,123 @@
+{
+  "player": {
+    "sprites": {
+      "horizontal": {
+        "texture": "art/playerGrey_walk1.png",
+        "width": 65,
+        "height": 65,
+        "frameCount": 2,
+        "frameTime": 0.1,
+        "animated": true
+      },
+      "vertical": {
+        "texture": "art/playerGrey_up1.png",
+        "width": 65,
+        "height": 65,
+        "frameCount": 2,
+        "frameTime": 0.1,
+        "animated": true
+      }
+    },
+    "collider": {
+      "width": 55,
+      "height": 55,
+      "isTrigger": false
+    },
+    "speed": 400.0,
+    "startPosition": { "x": 240, "y": 600 }
+  },
+  "mobs": {
+    "flying": {
+      "sprite": {
+        "texture": "art/enemyFlyingAlt_1.png",
+        "width": 60,
+        "height": 60,
+        "frameCount": 2,
+        "frameTime": 0.1,
+        "animated": true
+      },
+      "collider": {
+        "width": 50,
+        "height": 50,
+        "isTrigger": false
+      },
+      "speedRange": { "min": 120.0, "max": 180.0 }
+    },
+    "swimming": {
+      "sprite": {
+        "texture": "art/enemySwimming_1.png",
+        "width": 60,
+        "height": 60,
+        "frameCount": 2,
+        "frameTime": 0.1,
+        "animated": true
+      },
+      "collider": {
+        "width": 50,
+        "height": 50,
+        "isTrigger": false
+      },
+      "speedRange": { "min": 120.0, "max": 180.0 }
+    },
+    "walking": {
+      "sprite": {
+        "texture": "art/enemyWalking_1.png",
+        "width": 60,
+        "height": 60,
+        "frameCount": 2,
+        "frameTime": 0.1,
+        "animated": true
+      },
+      "collider": {
+        "width": 50,
+        "height": 50,
+        "isTrigger": false
+      },
+      "speedRange": { "min": 120.0, "max": 180.0 }
+    }
+  },
+  "ui": {
+    "scoreDisplay": {
+      "position": { "x": 10, "y": 10 },
+      "text": "Score: 0",
+      "font": "fonts/Xolonium-Regular.ttf",
+      "fontSize": 24,
+      "color": { "r": 255, "g": 255, "b": 255, "a": 255 }
+    },
+    "fpsDisplay": {
+      "position": { "x": 10, "y": 50 },
+      "text": "FPS: 60",
+      "font": "fonts/Xolonium-Regular.ttf",
+      "fontSize": 18,
+      "color": { "r": 255, "g": 255, "b": 255, "a": 255 }
+    },
+    "gameMessage": {
+      "position": { "x": 240, "y": 360 },
+      "text": "Dodge the Creeps!",
+      "font": "fonts/Xolonium-Regular.ttf",
+      "fontSize": 32,
+      "color": { "r": 255, "g": 255, "b": 255, "a": 255 }
+    }
+  },
+  "audio": {
+    "backgroundMusic": {
+      "name": "background",
+      "file": "art/House In a Forest Loop.ogg"
+    },
+    "soundEffects": {
+      "gameOver": {
+        "name": "gameover",
+        "file": "art/gameover.wav"
+      }
+    },
+    "settings": {
+      "musicVolume": 64,
+      "sfxVolume": 80
+    }
+  },
+  "gameSettings": {
+    "mobSpawnInterval": 0.5,
+    "scorePerSecond": 10,
+    "screenSize": { "width": 480, "height": 720 }
+  }
+}
