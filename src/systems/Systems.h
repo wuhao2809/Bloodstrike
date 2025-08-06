@@ -11,6 +11,9 @@
 #include "MobSpawningSystem.h"
 #include "CollisionSystem.h"
 #include "BoundarySystem.h"
+#include "AimingSystem.h"
+#include "WeaponSystem.h"
+#include "ProjectileSystem.h"
 
 // Forward declarations for systems not yet implemented will be added in Phase 4
 // class HudSystem;

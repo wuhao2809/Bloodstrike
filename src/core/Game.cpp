@@ -100,6 +100,11 @@ bool Game::initialize()
                                                       gameManager.screenHeight);
     renderSystem = std::make_unique<RenderSystem>(renderer, resourceManager.get());
 
+    // Initialize Bloodstrike 2D combat systems
+    aimingSystem = std::make_unique<AimingSystem>();
+    weaponSystem = std::make_unique<WeaponSystem>(entityFactory.get());
+    projectileSystem = std::make_unique<ProjectileSystem>();
+
     // Initialize audio system
     if (!audioSystem->initialize())
     {
@@ -207,12 +212,13 @@ bool Game::loadAudioAssets()
 
 void Game::createInitialEntities()
 {
-    // Create player entity
+    // Create player entity (combat components loaded from JSON)
     playerEntityID = entityFactory->createPlayer(ecs);
 
     // Create UI entities
     entityFactory->createUIElement(ecs, "scoreDisplay");
     entityFactory->createUIElement(ecs, "fpsDisplay");
+    entityFactory->createUIElement(ecs, "ammoDisplay");
     entityFactory->createUIElement(ecs, "gameMessage");
 }
 
@@ -224,9 +230,17 @@ void Game::gameLoop()
     // 2. Handle input
     inputSystem->update(ecs, gameManager, deltaTime);
 
+    // 2.5. Check if player state needs to be reset (after game restart)
+    if (gameManager.needsPlayerReset)
+    {
+        resetPlayerState();
+        gameManager.needsPlayerReset = false; // Clear the flag
+    }
+
     // 3. Update game logic (only if playing)
     if (gameManager.currentState == GameManager::PLAYING)
     {
+        // Movement and animation
         movementSystem->update(ecs, deltaTime);
         animationSystem->update(ecs, deltaTime);
         audioSystem->update(ecs, gameManager, deltaTime);
@@ -234,6 +248,12 @@ void Game::gameLoop()
         // Update game time and score
         gameManager.updateGameTime(deltaTime);
 
+        // Combat systems
+        aimingSystem->update(ecs, gameManager, deltaTime);
+        weaponSystem->update(ecs, gameManager, deltaTime);
+        projectileSystem->update(ecs, gameManager, deltaTime);
+
+        // Mob and collision systems
         mobSpawningSystem->update(ecs, gameManager, deltaTime);
         collisionSystem->update(ecs, gameManager, deltaTime);
         boundarySystem->update(ecs, gameManager, deltaTime);
@@ -285,6 +305,26 @@ void Game::updateUI()
         {
             uiText.content = "FPS: " + std::to_string(static_cast<int>(timingSystem->getFPS()));
         }
+        else if (entityType->type == "ammoDisplay")
+        {
+            // Find player's weapon to get ammo count
+            int currentAmmo = 0;
+            int maxAmmo = 30; // Default
+
+            auto &playerTags = ecs.getComponents<PlayerTag>();
+            for (auto &[playerEntityID, playerTag] : playerTags)
+            {
+                Weapon *weapon = ecs.getComponent<Weapon>(playerEntityID);
+                if (weapon)
+                {
+                    currentAmmo = weapon->ammoCount;
+                    maxAmmo = weapon->maxAmmo;
+                    break;
+                }
+            }
+
+            uiText.content = "Ammo: " + std::to_string(currentAmmo) + "/" + std::to_string(maxAmmo);
+        }
         else if (entityType->type == "gameMessage")
         {
             switch (gameManager.currentState)
@@ -301,6 +341,43 @@ void Game::updateUI()
                 uiText.visible = true;
                 break;
             }
+        }
+    }
+}
+
+void Game::resetPlayerState()
+{
+    // Reset player's weapon ammo when game restarts
+    auto &playerTags = ecs.getComponents<PlayerTag>();
+    for (auto &[playerEntityID, playerTag] : playerTags)
+    {
+        Weapon *weapon = ecs.getComponent<Weapon>(playerEntityID);
+        if (weapon)
+        {
+            weapon->ammoCount = weapon->maxAmmo; // Reset to full ammo
+            weapon->fireTimer = 0.0f;            // Ready to fire immediately
+            weapon->canFire = true;              // Enable firing
+        }
+
+        // Reset player position to start position
+        Transform *transform = ecs.getComponent<Transform>(playerEntityID);
+        if (transform)
+        {
+            // Get start position from JSON configuration
+            json playerConfig = entityFactory->getEntityConfig()["player"];
+            if (playerConfig.contains("startPosition"))
+            {
+                transform->x = playerConfig["startPosition"]["x"].get<float>();
+                transform->y = playerConfig["startPosition"]["y"].get<float>();
+            }
+        }
+
+        // Reset player velocity
+        Velocity *velocity = ecs.getComponent<Velocity>(playerEntityID);
+        if (velocity)
+        {
+            velocity->x = 0.0f;
+            velocity->y = 0.0f;
         }
     }
 }

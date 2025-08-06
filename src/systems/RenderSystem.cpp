@@ -2,6 +2,7 @@
 #include "../components/Components.h"
 #include "../managers/ResourceManager.h"
 #include <sstream>
+#include <cmath>
 
 RenderSystem::RenderSystem(SDL_Renderer *renderer, ResourceManager *rm)
     : renderer(renderer), resourceManager(rm) {}
@@ -14,6 +15,15 @@ void RenderSystem::update(ECS &ecs, GameManager &gameManager, float fps)
 
     // Render game sprites
     renderSprites(ecs);
+
+    // Render projectiles
+    renderProjectiles(ecs);
+
+    // Render aiming line
+    renderAimingLines(ecs);
+
+    // Render crosshair
+    renderCrosshair(ecs);
 
     // Render UI
     renderUI(ecs, gameManager, fps);
@@ -271,4 +281,103 @@ std::vector<std::string> RenderSystem::wrapText(const std::string &text, TTF_Fon
     }
 
     return lines;
+}
+
+// ========== BLOODSTRIKE 2D RENDERING METHODS ==========
+
+void RenderSystem::renderAimingLines(ECS &ecs)
+{
+    auto &aimingLines = ecs.getComponents<AimingLine>();
+
+    for (auto &[entityID, aimingLine] : aimingLines)
+    {
+        if (!aimingLine.showLine)
+            continue;
+
+        // Calculate direction and length
+        float dirX = aimingLine.endX - aimingLine.startX;
+        float dirY = aimingLine.endY - aimingLine.startY;
+        float length = std::sqrt(dirX * dirX + dirY * dirY);
+
+        if (length <= 0)
+            continue;
+
+        // Normalize direction
+        dirX /= length;
+        dirY /= length;
+
+        // Set color based on range (white if in range, red if out of range)
+        if (length <= aimingLine.maxRange)
+        {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 200); // White
+        }
+        else
+        {
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 200); // Red
+        }
+
+        // Draw dotted line
+        float currentDistance = 0.0f;
+        while (currentDistance < length && currentDistance < aimingLine.maxRange)
+        {
+            float x = aimingLine.startX + dirX * currentDistance;
+            float y = aimingLine.startY + dirY * currentDistance;
+
+            // Draw a small circle (dot)
+            SDL_Rect dotRect = {
+                static_cast<int>(x - 2),
+                static_cast<int>(y - 2),
+                4, 4};
+            SDL_RenderFillRect(renderer, &dotRect);
+
+            currentDistance += aimingLine.dotSpacing;
+        }
+    }
+}
+
+void RenderSystem::renderProjectiles(ECS &ecs)
+{
+    // Set projectile color (yellow)
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+
+    auto &projectileTags = ecs.getComponents<ProjectileTag>();
+
+    for (auto &[entityID, projectileTag] : projectileTags)
+    {
+        Transform *transform = ecs.getComponent<Transform>(entityID);
+        Sprite *sprite = ecs.getComponent<Sprite>(entityID);
+
+        if (transform && sprite)
+        {
+            // Draw a small rectangle for the projectile
+            SDL_Rect rect = {
+                static_cast<int>(transform->x - sprite->width / 2),
+                static_cast<int>(transform->y - sprite->height / 2),
+                sprite->width,
+                sprite->height};
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
+}
+
+void RenderSystem::renderCrosshair(ECS &ecs)
+{
+    auto &mouseTargets = ecs.getComponents<MouseTarget>();
+
+    for (auto &[entityID, mouseTarget] : mouseTargets)
+    {
+        if (!mouseTarget.isValid)
+            continue;
+
+        // Set crosshair color (white)
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+        int x = static_cast<int>(mouseTarget.x);
+        int y = static_cast<int>(mouseTarget.y);
+        int size = 8;
+
+        // Draw crosshair (horizontal and vertical lines)
+        SDL_RenderDrawLine(renderer, x - size, y, x + size, y);
+        SDL_RenderDrawLine(renderer, x, y - size, x, y + size);
+    }
 }

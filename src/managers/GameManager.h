@@ -15,6 +15,7 @@ public:
     int score = 0;
     float gameTime = 0.0f;
     float accumulatedScore = 0.0f; // Track fractional score accumulation
+    bool needsPlayerReset = false; // Flag to indicate player state should be reset
 
     // Screen bounds
     float screenWidth = 480;
@@ -38,6 +39,7 @@ public:
         score = 0;
         gameTime = 0.0f;
         accumulatedScore = 0.0f;
+        needsPlayerReset = true; // Request player state reset
     }
 
     void gameOver()

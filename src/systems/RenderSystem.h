@@ -20,5 +20,8 @@ public:
 private:
     void renderSprites(ECS &ecs);
     void renderUI(ECS &ecs, GameManager &gameManager, float fps);
+    void renderAimingLines(ECS &ecs);
+    void renderProjectiles(ECS &ecs);
+    void renderCrosshair(ECS &ecs);
     std::vector<std::string> wrapText(const std::string &text, TTF_Font *font, int maxWidth);
 };

@@ -24,7 +24,21 @@
       "isTrigger": false
     },
     "speed": 400.0,
-    "startPosition": { "x": 240, "y": 600 }
+    "startPosition": { "x": 640, "y": 600 },
+    "combat": {
+      "weapon": {
+        "damage": 25.0,
+        "fireRate": 5.0,
+        "ammoCount": 30,
+        "maxAmmo": 30,
+        "range": 800.0
+      },
+      "aimingLine": {
+        "maxRange": 800.0,
+        "dotCount": 20,
+        "dotSpacing": 40.0
+      }
+    }
   },
   "mobs": {
     "flying": {
@@ -91,8 +105,15 @@
       "fontSize": 18,
       "color": { "r": 255, "g": 255, "b": 255, "a": 255 }
     },
+    "ammoDisplay": {
+      "position": { "x": 10, "y": 80 },
+      "text": "Ammo: 30/30",
+      "font": "fonts/Xolonium-Regular.ttf",
+      "fontSize": 20,
+      "color": { "r": 255, "g": 255, "b": 0, "a": 255 }
+    },
     "gameMessage": {
-      "position": { "x": 240, "y": 360 },
+      "position": { "x": 640, "y": 360 },
       "text": "Bloodstrike 2D!",
       "font": "fonts/Xolonium-Regular.ttf",
       "fontSize": 32,

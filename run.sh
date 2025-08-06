@@ -36,6 +36,7 @@ if [ $? -eq 0 ]; then
     echo "Press ESC or close window to quit"
     echo "Use SPACE to start/restart game"
     echo "Use arrow keys to move"
+    echo "Use mouse to aim and LEFT CLICK to shoot"
     echo ""
     
     # Go back to main directory to run (so it can find entities.json and assets)

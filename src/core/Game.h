@@ -37,6 +37,11 @@ private:
     std::unique_ptr<BoundarySystem> boundarySystem;
     std::unique_ptr<RenderSystem> renderSystem;
 
+    // Bloodstrike 2D Combat Systems
+    std::unique_ptr<AimingSystem> aimingSystem;
+    std::unique_ptr<WeaponSystem> weaponSystem;
+    std::unique_ptr<ProjectileSystem> projectileSystem;
+
     // TODO: Systems to be implemented in Phase 4
     // std::unique_ptr<HudSystem> hudSystem;
     // std::unique_ptr<CleanupSystem> cleanupSystem;    // Entity IDs
@@ -57,4 +62,5 @@ private:
     void gameLoop();
     void handleEvents();
     void updateUI();
+    void resetPlayerState();
 };

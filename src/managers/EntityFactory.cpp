@@ -68,6 +68,49 @@ EntityID EntityFactory::createPlayer(ECS &ecs)
     // Add EntityType
     ecs.addComponent(playerID, EntityType("player"));
 
+    // Add combat components if available
+    if (playerConfig.contains("combat"))
+    {
+        const json &combatConfig = playerConfig["combat"];
+
+        // Add MouseTarget component
+        ecs.addComponent(playerID, MouseTarget());
+
+        // Add AimingLine component with configuration
+        if (combatConfig.contains("aimingLine"))
+        {
+            const json &aimingConfig = combatConfig["aimingLine"];
+            AimingLine aimingLine;
+            aimingLine.maxRange = aimingConfig["maxRange"].get<float>();
+            aimingLine.dotCount = aimingConfig["dotCount"].get<int>();
+            aimingLine.dotSpacing = aimingConfig["dotSpacing"].get<float>();
+            ecs.addComponent(playerID, aimingLine);
+        }
+        else
+        {
+            ecs.addComponent(playerID, AimingLine());
+        }
+
+        // Add Weapon component with configuration
+        if (combatConfig.contains("weapon"))
+        {
+            const json &weaponConfig = combatConfig["weapon"];
+            Weapon weapon;
+            weapon.damage = weaponConfig["damage"].get<float>();
+            weapon.fireRate = weaponConfig["fireRate"].get<float>();
+            weapon.ammoCount = weaponConfig["ammoCount"].get<int>();
+            weapon.maxAmmo = weaponConfig["maxAmmo"].get<int>();
+            weapon.range = weaponConfig["range"].get<float>();
+            weapon.fireTimer = 0.0f; // Ready to fire
+            weapon.canFire = true;   // Ready to fire
+            ecs.addComponent(playerID, weapon);
+        }
+        else
+        {
+            ecs.addComponent(playerID, Weapon()); // Default weapon
+        }
+    }
+
     return playerID;
 }
 
