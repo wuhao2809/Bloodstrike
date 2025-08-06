@@ -15,7 +15,8 @@ WeaponSystem::~WeaponSystem()
 void WeaponSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
 {
     updateWeaponTimers(ecs, deltaTime);
-    handleShooting(ecs, deltaTime);
+    handlePlayerShooting(ecs, deltaTime);
+    handleMobShooting(ecs, gameManager, deltaTime);
 }
 
 void WeaponSystem::updateWeaponTimers(ECS &ecs, float deltaTime)
@@ -36,7 +37,7 @@ void WeaponSystem::updateWeaponTimers(ECS &ecs, float deltaTime)
     }
 }
 
-void WeaponSystem::handleShooting(ECS &ecs, float deltaTime)
+void WeaponSystem::handlePlayerShooting(ECS &ecs, float deltaTime)
 {
     if (!isMousePressed())
         return;
@@ -69,7 +70,7 @@ void WeaponSystem::handleShooting(ECS &ecs, float deltaTime)
 
         // Create projectile
         EntityID projectileEntity = createProjectile(ecs, transform->x, transform->y,
-                                                     dirX, dirY, *weapon, entityID);
+                                                     dirX, dirY, *weapon, entityID, 500.0f, true);
 
         // Update weapon state
         weapon->ammoCount--;
@@ -83,12 +84,9 @@ void WeaponSystem::handleShooting(ECS &ecs, float deltaTime)
 }
 
 EntityID WeaponSystem::createProjectile(ECS &ecs, float startX, float startY,
-                                        float dirX, float dirY, const Weapon &weapon, EntityID owner)
+                                        float dirX, float dirY, const Weapon &weapon, EntityID owner, float projectileSpeed, bool isPlayerProjectile)
 {
     EntityID projectileEntity = ecs.createEntity();
-
-    // Projectile speed (pixels per second)
-    const float projectileSpeed = 500.0f;
 
     // Add components to projectile
     ecs.addComponent(projectileEntity, Transform(startX, startY, 0.0f));
@@ -102,13 +100,85 @@ EntityID WeaponSystem::createProjectile(ECS &ecs, float startX, float startY,
     // Add projectile tag for identification
     ecs.addComponent(projectileEntity, ProjectileTag{});
 
-    // Add sprite for rendering (small bullet)
-    ecs.addComponent(projectileEntity, Sprite(nullptr, 4, 4, 1, 0.0f));
-
-    // Add collider for hit detection
-    ecs.addComponent(projectileEntity, Collider(4.0f, 4.0f, false));
+    if (isPlayerProjectile)
+    {
+        // Player projectiles: small, white/yellow
+        ecs.addComponent(projectileEntity, Sprite(nullptr, 4, 4, 1, 0.0f));
+        ecs.addComponent(projectileEntity, ProjectileColor(SDL_Color{255, 255, 0, 255})); // Yellow
+        ecs.addComponent(projectileEntity, Collider(4.0f, 4.0f, false));
+    }
+    else
+    {
+        // Mob projectiles: larger, red
+        ecs.addComponent(projectileEntity, Sprite(nullptr, 8, 8, 1, 0.0f));
+        ecs.addComponent(projectileEntity, ProjectileColor(SDL_Color{255, 0, 0, 255})); // Red
+        ecs.addComponent(projectileEntity, Collider(8.0f, 8.0f, false));
+    }
 
     return projectileEntity;
+}
+
+void WeaponSystem::handleMobShooting(ECS &ecs, GameManager &gameManager, float deltaTime)
+{
+    // Only allow mob shooting during gameplay and at level 4
+    if (gameManager.currentState != GameManager::PLAYING || !gameManager.canMobsShoot())
+        return;
+
+    // Find player position for targeting
+    float playerX = 0.0f, playerY = 0.0f;
+    bool playerFound = false;
+
+    auto &playerTags = ecs.getComponents<PlayerTag>();
+    for (auto &[playerEntityID, playerTag] : playerTags)
+    {
+        Transform *playerTransform = ecs.getComponent<Transform>(playerEntityID);
+        if (playerTransform)
+        {
+            playerX = playerTransform->x;
+            playerY = playerTransform->y;
+            playerFound = true;
+            break;
+        }
+    }
+
+    if (!playerFound)
+        return;
+
+    // Check all mobs with weapons
+    auto &mobTags = ecs.getComponents<MobTag>();
+    for (auto &[mobEntityID, mobTag] : mobTags)
+    {
+        Weapon *weapon = ecs.getComponent<Weapon>(mobEntityID);
+        Transform *transform = ecs.getComponent<Transform>(mobEntityID);
+
+        if (!weapon || !transform)
+            continue;
+        if (!weapon->canFire)
+            continue;
+
+        // Calculate distance to player
+        float distX = playerX - transform->x;
+        float distY = playerY - transform->y;
+        float distance = std::sqrt(distX * distX + distY * distY);
+
+        // Only shoot if player is within range
+        if (distance > weapon->range)
+            continue;
+
+        // Calculate direction to player
+        float dirX = distX / distance;
+        float dirY = distY / distance;
+
+        // Create projectile targeting player
+        EntityID projectileEntity = createProjectile(ecs, transform->x, transform->y,
+                                                     dirX, dirY, *weapon, mobEntityID, 300.0f, false);
+
+        // Update weapon state
+        weapon->fireTimer = 1.0f / weapon->fireRate;
+        weapon->canFire = false;
+
+        std::cout << "Mob fired at player! Distance: " << distance << std::endl;
+    }
 }
 
 bool WeaponSystem::isMousePressed()

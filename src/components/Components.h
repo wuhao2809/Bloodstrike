@@ -164,6 +164,14 @@ struct Projectile
 struct ProjectileTag
 {
 };
+
+struct ProjectileColor
+{
+    SDL_Color color;
+
+    ProjectileColor(SDL_Color col = {255, 255, 255, 255}) : color(col) {}
+};
+
 struct WeaponTag
 {
 };

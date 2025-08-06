@@ -28,6 +28,6 @@ public:
     void update(ECS &ecs, GameManager &gameManager, float deltaTime) override;
 
 private:
-    void spawnMob(ECS &ecs);
+    void spawnMob(ECS &ecs, GameManager &gameManager);
     void setSpawnInterval(float interval) { spawnInterval = interval; }
 };

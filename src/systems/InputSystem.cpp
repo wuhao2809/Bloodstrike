@@ -19,6 +19,26 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
             clearAllMobs(ecs);
             gameManager.startGame();
         }
+        else if (gameManager.currentState == GameManager::LEVEL_COMPLETE)
+        {
+            // Continue to next level
+            clearAllMobs(ecs);
+            clearAllProjectiles(ecs);
+            gameManager.continueToNextLevel();
+        }
+    }
+
+    // Handle restart input (R key)
+    if (keyboardState[SDL_SCANCODE_R])
+    {
+        if (gameManager.currentState == GameManager::LEVEL_COMPLETE ||
+            gameManager.currentState == GameManager::PLAYING)
+        {
+            // Restart the game
+            clearAllMobs(ecs);
+            clearAllProjectiles(ecs);
+            gameManager.startGame();
+        }
     }
 
     // Handle player movement (only during gameplay)
@@ -107,5 +127,24 @@ void InputSystem::clearAllMobs(ECS &ecs)
     for (EntityID mobID : mobsToRemove)
     {
         ecs.removeEntity(mobID);
+    }
+}
+
+void InputSystem::clearAllProjectiles(ECS &ecs)
+{
+    // Get all entities with ProjectileTag and remove them
+    auto &projectileTags = ecs.getComponents<ProjectileTag>();
+    std::vector<EntityID> projectilesToRemove;
+
+    // Collect all projectile entity IDs
+    for (auto &[entityID, projectileTag] : projectileTags)
+    {
+        projectilesToRemove.push_back(entityID);
+    }
+
+    // Remove all projectile entities
+    for (EntityID projectileID : projectilesToRemove)
+    {
+        ecs.removeEntity(projectileID);
     }
 }

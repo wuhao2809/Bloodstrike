@@ -337,18 +337,27 @@ void RenderSystem::renderAimingLines(ECS &ecs)
 
 void RenderSystem::renderProjectiles(ECS &ecs)
 {
-    // Set projectile color (yellow)
-    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-
     auto &projectileTags = ecs.getComponents<ProjectileTag>();
 
     for (auto &[entityID, projectileTag] : projectileTags)
     {
         Transform *transform = ecs.getComponent<Transform>(entityID);
         Sprite *sprite = ecs.getComponent<Sprite>(entityID);
+        ProjectileColor *projColor = ecs.getComponent<ProjectileColor>(entityID);
 
         if (transform && sprite)
         {
+            // Set projectile color (use ProjectileColor component if available, default to yellow)
+            if (projColor)
+            {
+                SDL_SetRenderDrawColor(renderer, projColor->color.r, projColor->color.g,
+                                       projColor->color.b, projColor->color.a);
+            }
+            else
+            {
+                SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Default yellow
+            }
+
             // Draw a small rectangle for the projectile
             SDL_Rect rect = {
                 static_cast<int>(transform->x - sprite->width / 2),

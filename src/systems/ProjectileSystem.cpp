@@ -14,7 +14,7 @@ void ProjectileSystem::update(ECS &ecs, GameManager &gameManager, float deltaTim
 {
     moveProjectiles(ecs, deltaTime);
     checkProjectileLifetime(ecs, deltaTime);
-    handleProjectileCollisions(ecs);
+    handleProjectileCollisions(ecs, gameManager);
 }
 
 void ProjectileSystem::moveProjectiles(ECS &ecs, float deltaTime)
@@ -64,54 +64,73 @@ void ProjectileSystem::checkProjectileLifetime(ECS &ecs, float deltaTime)
     }
 }
 
-void ProjectileSystem::handleProjectileCollisions(ECS &ecs)
+void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameManager)
 {
     std::vector<EntityID> projectilesToRemove;
     auto &projectileTags = ecs.getComponents<ProjectileTag>();
 
-    // Check collisions between projectiles and mobs
+    // Check collisions for each projectile
     for (auto &[projID, projectileTag] : projectileTags)
     {
         Transform *projTransform = ecs.getComponent<Transform>(projID);
         Collider *projCollider = ecs.getComponent<Collider>(projID);
+        Projectile *projectile = ecs.getComponent<Projectile>(projID);
 
-        if (!projTransform || !projCollider)
+        if (!projTransform || !projCollider || !projectile)
             continue;
 
-        auto &mobTags = ecs.getComponents<MobTag>();
-
-        for (auto &[mobID, mobTag] : mobTags)
+        // Check if projectile owner is a player (player projectiles hit mobs)
+        bool isPlayerProjectile = false;
+        auto &playerTags = ecs.getComponents<PlayerTag>();
+        for (auto &[playerID, playerTag] : playerTags)
         {
-            Transform *mobTransform = ecs.getComponent<Transform>(mobID);
-            Collider *mobCollider = ecs.getComponent<Collider>(mobID);
-
-            if (!mobTransform || !mobCollider)
-                continue;
-
-            // Simple AABB collision detection
-            float projLeft = projTransform->x - projCollider->width / 2;
-            float projRight = projTransform->x + projCollider->width / 2;
-            float projTop = projTransform->y - projCollider->height / 2;
-            float projBottom = projTransform->y + projCollider->height / 2;
-
-            float mobLeft = mobTransform->x - mobCollider->width / 2;
-            float mobRight = mobTransform->x + mobCollider->width / 2;
-            float mobTop = mobTransform->y - mobCollider->height / 2;
-            float mobBottom = mobTransform->y + mobCollider->height / 2;
-
-            // Check if rectangles overlap
-            if (projRight > mobLeft && projLeft < mobRight &&
-                projBottom > mobTop && projTop < mobBottom)
+            if (playerID == projectile->owner)
             {
-                // Collision detected!
-                std::cout << "Projectile hit mob!" << std::endl;
+                isPlayerProjectile = true;
+                break;
+            }
+        }
 
-                // Mark projectile for removal
-                projectilesToRemove.push_back(projID);
+        if (isPlayerProjectile)
+        {
+            // Player projectile - check collision with mobs
+            auto &mobTags = ecs.getComponents<MobTag>();
+            for (auto &[mobID, mobTag] : mobTags)
+            {
+                Transform *mobTransform = ecs.getComponent<Transform>(mobID);
+                Collider *mobCollider = ecs.getComponent<Collider>(mobID);
 
-                // For now, just remove the mob (later we can add health system)
-                ecs.removeEntity(mobID);
-                break; // This projectile is done
+                if (!mobTransform || !mobCollider)
+                    continue;
+
+                if (checkProjectileCollision(*projTransform, *projCollider, *mobTransform, *mobCollider))
+                {
+                    std::cout << "Player projectile hit mob!" << std::endl;
+                    projectilesToRemove.push_back(projID);
+                    ecs.removeEntity(mobID);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            // Mob projectile - check collision with player
+            auto &playerTags = ecs.getComponents<PlayerTag>();
+            for (auto &[playerID, playerTag] : playerTags)
+            {
+                Transform *playerTransform = ecs.getComponent<Transform>(playerID);
+                Collider *playerCollider = ecs.getComponent<Collider>(playerID);
+
+                if (!playerTransform || !playerCollider)
+                    continue;
+
+                if (checkProjectileCollision(*projTransform, *projCollider, *playerTransform, *playerCollider))
+                {
+                    std::cout << "Mob projectile hit player! Game Over!" << std::endl;
+                    projectilesToRemove.push_back(projID);
+                    gameManager.gameOver(); // Trigger game over
+                    break;
+                }
             }
         }
     }
@@ -126,4 +145,23 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs)
 void ProjectileSystem::removeProjectile(ECS &ecs, EntityID entityID)
 {
     ecs.removeEntity(entityID);
+}
+
+bool ProjectileSystem::checkProjectileCollision(const Transform &projTransform, const Collider &projCollider,
+                                                const Transform &targetTransform, const Collider &targetCollider)
+{
+    // Simple AABB collision detection
+    float projLeft = projTransform.x - projCollider.width / 2;
+    float projRight = projTransform.x + projCollider.width / 2;
+    float projTop = projTransform.y - projCollider.height / 2;
+    float projBottom = projTransform.y + projCollider.height / 2;
+
+    float targetLeft = targetTransform.x - targetCollider.width / 2;
+    float targetRight = targetTransform.x + targetCollider.width / 2;
+    float targetTop = targetTransform.y - targetCollider.height / 2;
+    float targetBottom = targetTransform.y + targetCollider.height / 2;
+
+    // Check if rectangles overlap
+    return (projRight > targetLeft && projLeft < targetRight &&
+            projBottom > targetTop && projTop < targetBottom);
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "System.h"
+#include "../managers/GameManager.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <vector>

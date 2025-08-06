@@ -24,21 +24,18 @@ void MobSpawningSystem::update(ECS &ecs, GameManager &gameManager, float deltaTi
     // Update spawn timer
     timeSinceLastSpawn += deltaTime;
 
-    // Check if it's time to spawn a new mob
-    if (timeSinceLastSpawn >= spawnInterval)
-    {
-        spawnMob(ecs);
-        timeSinceLastSpawn = 0.0f;
+    // Get level-based spawn interval
+    float currentSpawnInterval = gameManager.getLevelSpawnInterval();
 
-        // Gradually decrease spawn interval to increase difficulty
-        if (spawnInterval > 0.2f)
-        {
-            spawnInterval = std::max(0.2f, spawnInterval - 0.01f);
-        }
+    // Check if it's time to spawn a new mob
+    if (timeSinceLastSpawn >= currentSpawnInterval)
+    {
+        spawnMob(ecs, gameManager);
+        timeSinceLastSpawn = 0.0f;
     }
 }
 
-void MobSpawningSystem::spawnMob(ECS &ecs)
+void MobSpawningSystem::spawnMob(ECS &ecs, GameManager &gameManager)
 {
     // Choose random mob type
     int mobTypeIndex = mobTypeDistribution(randomGenerator);
@@ -133,15 +130,45 @@ void MobSpawningSystem::spawnMob(ECS &ecs)
     // Use the calculated velocity from spawn logic
     ecs.addComponent(mobEntity, velocity);
 
-    // Create Speed component (random speed within range)
+    // Create Speed component (random speed within range, modified by level)
     json speedRange = mobConfig["speedRange"];
     float minSpeed = speedRange["min"].get<float>();
     float maxSpeed = speedRange["max"].get<float>();
-    float speed = minSpeed + speedDistribution(randomGenerator) * (maxSpeed - minSpeed);
+    float baseSpeed = minSpeed + speedDistribution(randomGenerator) * (maxSpeed - minSpeed);
+
+    // Apply level speed multiplier
+    float levelSpeedMultiplier = gameManager.getLevelSpeedMultiplier();
+    float finalSpeed = baseSpeed * levelSpeedMultiplier;
 
     Speed speedComponent;
-    speedComponent.value = speed;
+    speedComponent.value = finalSpeed;
     ecs.addComponent(mobEntity, speedComponent);
 
-    std::cout << "Spawned " << mobType << " mob at (" << spawnX << ", " << spawnY << ") with speed " << speed << std::endl;
+    // Add weapon component if mobs can shoot at this level (level 4)
+    if (gameManager.canMobsShoot())
+    {
+        // Load combat config from JSON
+        json combatConfig = mobConfig.contains("combat") ? mobConfig["combat"] : entityFactory->getEntityConfig()["defaultMobCombat"];
+
+        // Add weapon component
+        Weapon weapon;
+        weapon.damage = combatConfig["damage"].get<float>();
+        weapon.range = combatConfig["range"].get<float>();
+        weapon.fireRate = combatConfig["fireRate"].get<float>();
+        weapon.fireTimer = 0.0f;
+        weapon.canFire = true;
+        weapon.ammoCount = 999; // Unlimited ammo for mobs
+        weapon.maxAmmo = 999;
+        ecs.addComponent(mobEntity, weapon);
+
+        std::cout << "Spawned " << mobType << " mob with weapon at (" << spawnX << ", " << spawnY
+                  << ") with speed " << finalSpeed << " (base: " << baseSpeed
+                  << ", multiplier: " << levelSpeedMultiplier << ")" << std::endl;
+    }
+    else
+    {
+        std::cout << "Spawned " << mobType << " mob at (" << spawnX << ", " << spawnY
+                  << ") with speed " << finalSpeed << " (base: " << baseSpeed
+                  << ", multiplier: " << levelSpeedMultiplier << ")" << std::endl;
+    }
 }

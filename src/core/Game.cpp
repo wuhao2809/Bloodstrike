@@ -219,6 +219,7 @@ void Game::createInitialEntities()
     entityFactory->createUIElement(ecs, "scoreDisplay");
     entityFactory->createUIElement(ecs, "fpsDisplay");
     entityFactory->createUIElement(ecs, "ammoDisplay");
+    entityFactory->createUIElement(ecs, "levelDisplay");
     entityFactory->createUIElement(ecs, "gameMessage");
 }
 
@@ -325,6 +326,13 @@ void Game::updateUI()
 
             uiText.content = "Ammo: " + std::to_string(currentAmmo) + "/" + std::to_string(maxAmmo);
         }
+        else if (entityType->type == "levelDisplay")
+        {
+            int remainingTime = static_cast<int>(gameManager.levelDuration - gameManager.levelTime);
+            remainingTime = std::max(0, remainingTime); // Don't show negative time
+            uiText.content = "Level: " + std::to_string(gameManager.currentLevel) +
+                             " - Time: " + std::to_string(remainingTime) + "s";
+        }
         else if (entityType->type == "gameMessage")
         {
             switch (gameManager.currentState)
@@ -335,6 +343,10 @@ void Game::updateUI()
                 break;
             case GameManager::PLAYING:
                 uiText.visible = false;
+                break;
+            case GameManager::LEVEL_COMPLETE:
+                uiText.content = "Level " + std::to_string(gameManager.currentLevel) + " Complete! SPACE: Continue | R: Restart";
+                uiText.visible = true;
                 break;
             case GameManager::GAME_OVER:
                 uiText.content = "Game Over! Press SPACE to restart";

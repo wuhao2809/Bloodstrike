@@ -90,6 +90,12 @@
       "speedRange": { "min": 120.0, "max": 180.0 }
     }
   },
+  "defaultMobCombat": {
+    "damage": 15.0,
+    "fireRate": 2.0,
+    "range": 400.0,
+    "projectileSpeed": 300.0
+  },
   "ui": {
     "scoreDisplay": {
       "position": { "x": 10, "y": 10 },
@@ -111,6 +117,13 @@
       "font": "fonts/Xolonium-Regular.ttf",
       "fontSize": 20,
       "color": { "r": 255, "g": 255, "b": 0, "a": 255 }
+    },
+    "levelDisplay": {
+      "position": { "x": 10, "y": 110 },
+      "text": "Level: 1 - Time: 45s",
+      "font": "fonts/Xolonium-Regular.ttf",
+      "fontSize": 20,
+      "color": { "r": 0, "g": 255, "b": 255, "a": 255 }
     },
     "gameMessage": {
       "position": { "x": 640, "y": 360 },

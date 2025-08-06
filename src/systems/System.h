@@ -1,8 +1,10 @@
 #pragma once
 #include "../core/ECS.h"
-#include "../managers/GameManager.h"
 #include <SDL2/SDL.h>
 #include <chrono>
+
+// Forward declaration
+class GameManager;
 
 // Base System class
 class System
