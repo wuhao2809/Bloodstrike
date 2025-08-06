@@ -14,30 +14,77 @@ Game::~Game()
 
 bool Game::initialize()
 {
-    if (!initializeSDL())
+    // Initialize basic SDL first (without window)
+    if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
+        std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
         return false;
     }
 
-    // Initialize resource manager
-    resourceManager = std::make_unique<ResourceManager>(renderer);
+    // Initialize SDL_image
+    int imgFlags = IMG_INIT_PNG;
+    if (!(IMG_Init(imgFlags) & imgFlags))
+    {
+        std::cerr << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << std::endl;
+        return false;
+    }
 
-    // Initialize entity factory
-    entityFactory = std::make_unique<EntityFactory>(resourceManager.get());
+    // Initialize SDL_ttf
+    if (TTF_Init() == -1)
+    {
+        std::cerr << "SDL_ttf could not initialize! SDL_ttf Error: " << TTF_GetError() << std::endl;
+        return false;
+    }
 
-    // Load entity configuration
+    // Load entity configuration FIRST to get screen size
+    entityFactory = std::make_unique<EntityFactory>(nullptr); // Temporary without renderer
     if (!entityFactory->loadConfig("entities.json"))
     {
         std::cerr << "Failed to load entity configuration" << std::endl;
         return false;
     }
 
-    // Load game settings from JSON
+    // Load game settings from JSON BEFORE creating window
     json gameSettings = entityFactory->getGameSettings();
     gameManager.screenWidth = gameSettings["screenSize"]["width"].get<float>();
     gameManager.screenHeight = gameSettings["screenSize"]["height"].get<float>();
     gameManager.mobSpawnInterval = gameSettings["mobSpawnInterval"].get<float>();
     gameManager.scorePerSecond = gameSettings["scorePerSecond"].get<float>();
+
+    // NOW create window with correct size
+    window = SDL_CreateWindow("Bloodstrike 2D",
+                              SDL_WINDOWPOS_UNDEFINED,
+                              SDL_WINDOWPOS_UNDEFINED,
+                              static_cast<int>(gameManager.screenWidth),
+                              static_cast<int>(gameManager.screenHeight),
+                              SDL_WINDOW_SHOWN);
+
+    if (!window)
+    {
+        std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
+        return false;
+    }
+
+    // Create renderer
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (!renderer)
+    {
+        std::cerr << "Renderer could not be created! SDL Error: " << SDL_GetError() << std::endl;
+        return false;
+    }
+
+    // Initialize resource manager
+    resourceManager = std::make_unique<ResourceManager>(renderer);
+
+    // Re-initialize entity factory with proper renderer
+    entityFactory = std::make_unique<EntityFactory>(resourceManager.get());
+
+    // Reload config with proper resource manager
+    if (!entityFactory->loadConfig("entities.json"))
+    {
+        std::cerr << "Failed to reload entity configuration" << std::endl;
+        return false;
+    }
 
     // Initialize systems
     timingSystem = std::make_unique<TimingSystem>();
@@ -100,55 +147,6 @@ void Game::shutdown()
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
-}
-
-bool Game::initializeSDL()
-{
-    // Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
-    {
-        std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-
-    // Initialize SDL_image
-    int imgFlags = IMG_INIT_PNG;
-    if (!(IMG_Init(imgFlags) & imgFlags))
-    {
-        std::cerr << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << std::endl;
-        return false;
-    }
-
-    // Initialize SDL_ttf
-    if (TTF_Init() == -1)
-    {
-        std::cerr << "SDL_ttf could not initialize! SDL_ttf Error: " << TTF_GetError() << std::endl;
-        return false;
-    }
-
-    // Create window
-    window = SDL_CreateWindow("Dodge the Creeps",
-                              SDL_WINDOWPOS_UNDEFINED,
-                              SDL_WINDOWPOS_UNDEFINED,
-                              static_cast<int>(gameManager.screenWidth),
-                              static_cast<int>(gameManager.screenHeight),
-                              SDL_WINDOW_SHOWN);
-
-    if (!window)
-    {
-        std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-
-    // Create renderer
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (!renderer)
-    {
-        std::cerr << "Renderer could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-        return false;
-    }
-
-    return true;
 }
 
 bool Game::loadAudioAssets()
@@ -292,7 +290,7 @@ void Game::updateUI()
             switch (gameManager.currentState)
             {
             case GameManager::MENU:
-                uiText.content = "Dodge the Creeps! Press SPACE to start";
+                uiText.content = "Bloodstrike 2D! Press SPACE to start";
                 uiText.visible = true;
                 break;
             case GameManager::PLAYING:

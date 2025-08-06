@@ -51,7 +51,6 @@ public:
     void shutdown();
 
 private:
-    bool initializeSDL();
     bool loadAssets();
     bool loadAudioAssets();
     void createInitialEntities();

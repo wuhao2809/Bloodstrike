@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Dodge the Creeps - Build and Run Script
-# This script builds the C++ ECS game and runs it
+# Bloodstrike 2D - Build and Run Script
+# This script builds the C++ ECS shooting game and runs it
 
 set -e  # Exit on any error
 
-echo "🎮 Dodge the Creeps - C++ ECS Version"
-echo "======================================"
+echo "🎮 Bloodstrike 2D - C++ ECS Shooter"
+echo "===================================="
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,15 +32,15 @@ make
 if [ $? -eq 0 ]; then
     echo "✅ Build successful!"
     echo ""
-    echo "🚀 Starting game..."
+    echo "🚀 Starting Bloodstrike 2D..."
     echo "Press ESC or close window to quit"
     echo "Use SPACE to start/restart game"
     echo "Use arrow keys to move"
     echo ""
     
-    # Go back to cpp_version directory to run (so it can find entities.json and assets)
+    # Go back to main directory to run (so it can find entities.json and assets)
     cd ..
-    ./build/DodgeTheCreeps
+    ./build/Bloodstrike
 else
     echo "❌ Build failed!"
     exit 1

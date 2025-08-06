@@ -93,7 +93,7 @@
     },
     "gameMessage": {
       "position": { "x": 240, "y": 360 },
-      "text": "Dodge the Creeps!",
+      "text": "Bloodstrike 2D!",
       "font": "fonts/Xolonium-Regular.ttf",
       "fontSize": 32,
       "color": { "r": 255, "g": 255, "b": 255, "a": 255 }
@@ -118,6 +118,6 @@
   "gameSettings": {
     "mobSpawnInterval": 0.5,
     "scorePerSecond": 10,
-    "screenSize": { "width": 480, "height": 720 }
+    "screenSize": { "width": 1280, "height": 720 }
   }
 }
