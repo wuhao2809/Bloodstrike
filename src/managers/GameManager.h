@@ -20,8 +20,8 @@ public:
 
     // Level system
     int currentLevel = 1;
-    float levelTime = 0.0f;            // Time spent in current level
-    const float levelDuration = 10.0f; // 10 seconds per level
+    float levelTime = 0.0f;           // Time spent in current level
+    const float levelDuration = 5.0f; // 10 seconds per level
     const int maxLevel = 4;
 
     // Screen bounds
