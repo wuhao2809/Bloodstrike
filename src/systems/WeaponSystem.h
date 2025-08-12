@@ -20,6 +20,8 @@ public:
 private:
     void handlePlayerShooting(ECS &ecs, float deltaTime);
     void handleMobShooting(ECS &ecs, GameManager &gameManager, float deltaTime);
+    void handleMobKingShooting(ECS &ecs, float deltaTime);
+    void handleRegularMobShooting(ECS &ecs, float deltaTime);
     void updateWeaponTimers(ECS &ecs, float deltaTime);
     EntityID createProjectile(ECS &ecs, float startX, float startY, float dirX, float dirY, const Weapon &weapon, EntityID owner, float projectileSpeed = 500.0f, bool isPlayerProjectile = true);
     bool isMousePressed();

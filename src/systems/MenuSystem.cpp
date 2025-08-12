@@ -266,6 +266,11 @@ void MenuSystem::executeMenuAction(const std::string &action, GameManager &gameM
         std::cout << "Starting single player game..." << std::endl;
         gameManager.startGame();
     }
+    else if (action == "dualplayer")
+    {
+        std::cout << "Starting dual player game..." << std::endl;
+        gameManager.startDualPlayerGame();
+    }
     else if (action == "multiplayer")
     {
         std::cout << "Switching to multiplayer menu..." << std::endl;

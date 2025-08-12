@@ -12,7 +12,15 @@ public:
         GAME_OVER
     };
 
+    enum GameMode
+    {
+        SINGLE_PLAYER,
+        DUAL_PLAYER_LOCAL,
+        MULTIPLAYER_ONLINE
+    };
+
     GameState currentState = MENU;
+    GameMode currentGameMode = SINGLE_PLAYER;
     int score = 0;
     float gameTime = 0.0f;
     float accumulatedScore = 0.0f; // Track fractional score accumulation
@@ -40,17 +48,32 @@ public:
         currentLevel = 1;
         levelTime = 0.0f;
         currentState = MENU;
+        currentGameMode = SINGLE_PLAYER;
     }
 
     void startGame()
     {
         currentState = PLAYING;
+        currentGameMode = SINGLE_PLAYER;
         score = 0;
         gameTime = 0.0f;
         accumulatedScore = 0.0f;
         currentLevel = 1;
         levelTime = 0.0f;
         needsPlayerReset = true; // Request player state reset
+    }
+
+    void startDualPlayerGame()
+    {
+        currentState = PLAYING;
+        currentGameMode = DUAL_PLAYER_LOCAL;
+        score = 0;
+        gameTime = 0.0f;
+        accumulatedScore = 0.0f;
+        currentLevel = 1;
+        levelTime = 0.0f;
+        needsPlayerReset = true; // Request player state reset
+        std::cout << "Starting Dual Player Mode - Player vs Mob King!" << std::endl;
     }
 
     void gameOver()
@@ -158,5 +181,27 @@ public:
     float getLevelTimeRemaining() const
     {
         return levelDuration - levelTime;
+    }
+
+    // Game mode helpers
+    bool isSinglePlayer() const { return currentGameMode == SINGLE_PLAYER; }
+    bool isDualPlayer() const { return currentGameMode == DUAL_PLAYER_LOCAL; }
+    bool isMultiplayer() const { return currentGameMode == MULTIPLAYER_ONLINE; }
+
+    // Dual player specific settings
+    bool shouldSpawnMobKing() const
+    {
+        return isDualPlayer() && currentLevel >= 2; // Mob King appears from level 2 in dual player
+    }
+
+    // Get mob spawn settings based on game mode
+    float getGameModeSpawnInterval() const
+    {
+        if (isDualPlayer())
+        {
+            // Dual player: fewer regular mobs since we have Mob King
+            return getLevelSpawnInterval() * 2.0f;
+        }
+        return getLevelSpawnInterval();
     }
 };

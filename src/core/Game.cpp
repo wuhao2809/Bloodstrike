@@ -376,6 +376,32 @@ void Game::updateUI()
 
 void Game::resetPlayerState()
 {
+    // Reset mob spawning system for dual player mode
+    mobSpawningSystem->reset();
+
+    // Clear all existing mobs and projectiles
+    auto &mobTags = ecs.getComponents<MobTag>();
+    std::vector<EntityID> mobsToRemove;
+    for (auto &[mobEntityID, mobTag] : mobTags)
+    {
+        mobsToRemove.push_back(mobEntityID);
+    }
+    for (EntityID mobID : mobsToRemove)
+    {
+        ecs.removeEntity(mobID);
+    }
+
+    auto &projectileTags = ecs.getComponents<ProjectileTag>();
+    std::vector<EntityID> projectilesToRemove;
+    for (auto &[projectileEntityID, projectileTag] : projectileTags)
+    {
+        projectilesToRemove.push_back(projectileEntityID);
+    }
+    for (EntityID projectileID : projectilesToRemove)
+    {
+        ecs.removeEntity(projectileID);
+    }
+
     // Reset player's weapon ammo when game restarts
     auto &playerTags = ecs.getComponents<PlayerTag>();
     for (auto &[playerEntityID, playerTag] : playerTags)

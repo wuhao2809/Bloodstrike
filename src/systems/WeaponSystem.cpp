@@ -126,10 +126,84 @@ EntityID WeaponSystem::createProjectile(ECS &ecs, float startX, float startY,
 
 void WeaponSystem::handleMobShooting(ECS &ecs, GameManager &gameManager, float deltaTime)
 {
-    // Only allow mob shooting during gameplay and at level 4
-    if (gameManager.currentState != GameManager::PLAYING || !gameManager.canMobsShoot())
+    // Handle different shooting behaviors based on game mode
+    if (gameManager.currentState != GameManager::PLAYING)
         return;
 
+    // Handle Mob King shooting (player-controlled in dual player mode)
+    if (gameManager.isDualPlayer())
+    {
+        handleMobKingShooting(ecs, deltaTime);
+    }
+    
+    // Handle regular mob shooting (only at level 4 in single player mode)
+    if (gameManager.isSinglePlayer() && gameManager.canMobsShoot())
+    {
+        handleRegularMobShooting(ecs, deltaTime);
+    }
+}
+
+void WeaponSystem::handleMobKingShooting(ECS &ecs, float deltaTime)
+{
+    // Find Mob King entities
+    auto &mobKingEntities = ecs.getComponents<MobKing>();
+    
+    for (auto &[mobKingEntityID, mobKing] : mobKingEntities)
+    {
+        Weapon *weapon = ecs.getComponent<Weapon>(mobKingEntityID);
+        Transform *transform = ecs.getComponent<Transform>(mobKingEntityID);
+        MovementDirection *movementDir = ecs.getComponent<MovementDirection>(mobKingEntityID);
+        
+        if (!weapon || !transform || !movementDir)
+            continue;
+        if (!weapon->canFire)
+            continue;
+
+        // Get keyboard state to check for P key
+        const Uint8 *keyboardState = SDL_GetKeyboardState(nullptr);
+        if (!keyboardState[SDL_SCANCODE_P])
+            continue;
+
+        // Determine shooting direction based on movement direction
+        float dirX = 0.0f, dirY = 0.0f;
+        
+        if (movementDir->direction == MovementDirection::HORIZONTAL)
+        {
+            // Check last movement for horizontal direction
+            Velocity *velocity = ecs.getComponent<Velocity>(mobKingEntityID);
+            if (velocity)
+            {
+                if (velocity->x > 0) dirX = 1.0f;      // Moving right, shoot right
+                else if (velocity->x < 0) dirX = -1.0f; // Moving left, shoot left
+                else dirX = -1.0f; // Default to shooting left if stationary
+            }
+        }
+        else // VERTICAL
+        {
+            // Check last movement for vertical direction
+            Velocity *velocity = ecs.getComponent<Velocity>(mobKingEntityID);
+            if (velocity)
+            {
+                if (velocity->y > 0) dirY = 1.0f;      // Moving down, shoot down
+                else if (velocity->y < 0) dirY = -1.0f; // Moving up, shoot up
+                else dirY = -1.0f; // Default to shooting up if stationary
+            }
+        }
+
+        // Create projectile in facing direction
+        EntityID projectileEntity = createProjectile(ecs, transform->x, transform->y,
+                                                     dirX, dirY, *weapon, mobKingEntityID, 400.0f, false);
+
+        // Update weapon state
+        weapon->fireTimer = 1.0f / weapon->fireRate;
+        weapon->canFire = false;
+
+        std::cout << "Mob King fired! Direction: (" << dirX << ", " << dirY << ")" << std::endl;
+    }
+}
+
+void WeaponSystem::handleRegularMobShooting(ECS &ecs, float deltaTime)
+{
     // Find player position for targeting
     float playerX = 0.0f, playerY = 0.0f;
     bool playerFound = false;
@@ -150,10 +224,14 @@ void WeaponSystem::handleMobShooting(ECS &ecs, GameManager &gameManager, float d
     if (!playerFound)
         return;
 
-    // Check all mobs with weapons
+    // Check all mobs with weapons (excluding Mob King)
     auto &mobTags = ecs.getComponents<MobTag>();
     for (auto &[mobEntityID, mobTag] : mobTags)
     {
+        // Skip if this is a Mob King (they have separate handling)
+        if (ecs.getComponent<MobKing>(mobEntityID))
+            continue;
+
         Weapon *weapon = ecs.getComponent<Weapon>(mobEntityID);
         Transform *transform = ecs.getComponent<Transform>(mobEntityID);
 
@@ -183,7 +261,7 @@ void WeaponSystem::handleMobShooting(ECS &ecs, GameManager &gameManager, float d
         weapon->fireTimer = 1.0f / weapon->fireRate;
         weapon->canFire = false;
 
-        std::cout << "Mob fired at player! Distance: " << distance << std::endl;
+        std::cout << "Regular mob fired at player! Distance: " << distance << std::endl;
     }
 }
 

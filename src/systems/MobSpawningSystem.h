@@ -26,8 +26,13 @@ private:
 public:
     MobSpawningSystem(EntityFactory *factory, float screenW, float screenH);
     void update(ECS &ecs, GameManager &gameManager, float deltaTime) override;
+    void reset() { mobKingSpawned = false; timeSinceLastSpawn = 0.0f; }
 
 private:
     void spawnMob(ECS &ecs, GameManager &gameManager);
+    void spawnMobKing(ECS &ecs, GameManager &gameManager);
     void setSpawnInterval(float interval) { spawnInterval = interval; }
+
+    // Dual player state
+    bool mobKingSpawned = false;
 };

@@ -21,11 +21,18 @@ void MobSpawningSystem::update(ECS &ecs, GameManager &gameManager, float deltaTi
         return;
     }
 
+    // Handle dual player mode - spawn Mob King if needed
+    if (gameManager.isDualPlayer() && gameManager.shouldSpawnMobKing() && !mobKingSpawned)
+    {
+        spawnMobKing(ecs, gameManager);
+        mobKingSpawned = true;
+    }
+
     // Update spawn timer
     timeSinceLastSpawn += deltaTime;
 
-    // Get level-based spawn interval
-    float currentSpawnInterval = gameManager.getLevelSpawnInterval();
+    // Get level-based spawn interval (modified for game mode)
+    float currentSpawnInterval = gameManager.getGameModeSpawnInterval();
 
     // Check if it's time to spawn a new mob
     if (timeSinceLastSpawn >= currentSpawnInterval)
@@ -144,8 +151,22 @@ void MobSpawningSystem::spawnMob(ECS &ecs, GameManager &gameManager)
     speedComponent.value = finalSpeed;
     ecs.addComponent(mobEntity, speedComponent);
 
-    // Add weapon component if mobs can shoot at this level (level 4)
-    if (gameManager.canMobsShoot())
+    // In dual player mode, only Mob King can shoot (not regular mobs)
+    // In single player mode, mobs can shoot at level 4
+    bool shouldHaveWeapon = false;
+    if (gameManager.isDualPlayer())
+    {
+        // In dual player mode, regular mobs don't get weapons (only Mob King does)
+        shouldHaveWeapon = false;
+    }
+    else
+    {
+        // In single player mode, mobs can shoot at level 4
+        shouldHaveWeapon = gameManager.canMobsShoot();
+    }
+
+    // Add weapon component if conditions are met
+    if (shouldHaveWeapon)
     {
         // Load combat config from JSON
         json combatConfig = mobConfig.contains("combat") ? mobConfig["combat"] : entityFactory->getEntityConfig()["defaultMobCombat"];
@@ -171,4 +192,99 @@ void MobSpawningSystem::spawnMob(ECS &ecs, GameManager &gameManager)
                   << ") with speed " << finalSpeed << " (base: " << baseSpeed
                   << ", multiplier: " << levelSpeedMultiplier << ")" << std::endl;
     }
+}
+
+void MobSpawningSystem::spawnMobKing(ECS &ecs, GameManager &gameManager)
+{
+    std::cout << "Spawning Mob King!" << std::endl;
+
+    // Get mob king configuration
+    json mobKingConfig = entityFactory->getEntityConfig()["mobs"]["mobKing"];
+
+    // Create mob king entity
+    EntityID mobKingEntity = ecs.createEntity();
+
+    // Add MobKing component (special marker for the boss)
+    ecs.addComponent(mobKingEntity, MobKing{});
+
+    // Add MobTag component for general mob behavior
+    ecs.addComponent(mobKingEntity, MobTag{});
+
+    // Add EntityType component for texture identification
+    ecs.addComponent(mobKingEntity, EntityType{"mobKing"});
+
+    // Set spawn position from config (right side of screen)
+    json startPos = mobKingConfig["startPosition"];
+    Transform transform;
+    transform.x = startPos["x"].get<float>();
+    transform.y = startPos["y"].get<float>();
+    transform.rotation = 0.0f;
+    ecs.addComponent(mobKingEntity, transform);
+
+    // Add MovementDirection component
+    ecs.addComponent(mobKingEntity, MovementDirection(MovementDirection::HORIZONTAL));
+
+    // Create Sprite component
+    json spriteConfig = mobKingConfig["sprite"];
+    Sprite sprite;
+    sprite.texture = nullptr; // Will be loaded by ResourceManager in RenderSystem
+    sprite.width = spriteConfig["width"].get<int>();
+    sprite.height = spriteConfig["height"].get<int>();
+    sprite.frameCount = spriteConfig["frameCount"].get<int>();
+    sprite.frameTime = spriteConfig["frameTime"].get<float>();
+    sprite.animated = spriteConfig["animated"].get<bool>();
+    ecs.addComponent(mobKingEntity, sprite);
+
+    // Create Animation component if animated
+    if (spriteConfig["animated"].get<bool>())
+    {
+        Animation animation;
+        animation.currentFrame = 0;
+        animation.animationTimer = 0.0f;
+        ecs.addComponent(mobKingEntity, animation);
+    }
+
+    // Create Collider component
+    json colliderConfig = mobKingConfig["collider"];
+    Collider collider;
+    collider.width = colliderConfig["width"].get<float>();
+    collider.height = colliderConfig["height"].get<float>();
+    collider.isTrigger = colliderConfig["isTrigger"].get<bool>();
+    ecs.addComponent(mobKingEntity, collider);
+
+    // Initial velocity (player-controlled, starts stationary)
+    Velocity velocity;
+    velocity.x = 0.0f; // Player-controlled movement
+    velocity.y = 0.0f;
+    ecs.addComponent(mobKingEntity, velocity);
+
+    // Create Speed component
+    json speedRange = mobKingConfig["speedRange"];
+    float speed = speedRange["min"].get<float>(); // Use minimum speed for more controlled movement
+    Speed speedComponent;
+    speedComponent.value = speed;
+    ecs.addComponent(mobKingEntity, speedComponent);
+
+    // Add Health component (boss has health)
+    Health health;
+    health.currentHealth = mobKingConfig["combat"]["health"].get<float>();
+    health.maxHealth = health.currentHealth;
+    ecs.addComponent(mobKingEntity, health);
+
+    // Add weapon component (boss can always shoot)
+    json combatConfig = mobKingConfig["combat"];
+    Weapon weapon;
+    weapon.damage = combatConfig["damage"].get<float>();
+    weapon.range = combatConfig["range"].get<float>();
+    weapon.fireRate = combatConfig["fireRate"].get<float>();
+    weapon.fireTimer = 0.0f;
+    weapon.canFire = true;
+    weapon.ammoCount = 999; // Unlimited ammo
+    weapon.maxAmmo = 999;
+    ecs.addComponent(mobKingEntity, weapon);
+
+    std::cout << "Mob King spawned at (" << transform.x << ", " << transform.y 
+              << ") with " << health.currentHealth << " health and combat abilities!" << std::endl;
+    std::cout << "Mob King stats: Damage=" << weapon.damage << ", Range=" << weapon.range 
+              << ", Fire Rate=" << weapon.fireRate << std::endl;
 }

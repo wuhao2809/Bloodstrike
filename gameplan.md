@@ -195,7 +195,57 @@ void renderCrosshair(SDL_Renderer* renderer, float mouseX, float mouseY);
 
 **Goal**: Implement peer-to-peer multiplayer with asymmetric Player vs Mob King gameplay
 
-**Current Status**: Phase 4a (Menu System) ✅ COMPLETED, moving to Phase 4b (Networking Foundation)
+**Current Status**: Phase 4a (Menu System) ✅ COMPLETED, Phase 4b-partial ✅ COMPLETED, **NEW Phase 4b-alternate: Dual Player Local Mode** ✅ COMPLETED
+
+#### Game Design:
+
+**Three Game Modes:**
+
+1. **Single Player**: Current 4-level system (keep existing) - Mobs can shoot at Level 4
+2. **Dual Player (Local)**: **Player vs Human Mob King** - **UPDATED IMPLEMENTATION** ✅ 
+3. **Multiplayer (Online)**: 2-minute survival challenge - Future implementation
+
+**✅ UPDATED: Dual Player Local Mode** 
+
+**Human vs Human Local Controls:**
+- **Player 1 (Survivor)**: WASD/Arrow keys movement, Mouse aim & click to shoot
+- **Player 2 (Mob King)**: IJKL movement, P key to shoot in facing direction
+
+**Combat System Update:**
+- **Regular Mobs**: Cannot shoot in dual player mode (simplified for balance)
+- **Mob King (Human-Controlled)**: Full combat abilities with directional shooting
+- **Single Player Level 4**: Regular mobs still get weapons (existing behavior preserved)
+- **Dual Player Mode**: Only human Mob King can shoot, regular mobs are basic
+
+**Dual Player Rules:**
+- **Player 1**: Survives against waves + Human Mob King (mouse aim & click)
+- **Player 2**: Controls Mob King with IJKL movement + P to shoot in facing direction
+- **Regular Mob Spawn**: Reduced frequency (2x interval) to balance with human Mob King
+- **Mob King Stats**: 150 health, high damage (30), medium fire rate (1.5), long range (600)
+- **Victory**: Player 1 wins by completing levels, Player 2 wins by eliminating Player 1
+
+**Technical Implementation:**
+```cpp
+// ✅ COMPLETED COMPONENTS
+enum class GameMode {
+    SINGLE_PLAYER,      // ✅ Existing behavior
+    DUAL_PLAYER_LOCAL,  // ✅ UPDATED: Human vs Human local
+    MULTIPLAYER_ONLINE  // 🚧 Future: Human vs Human online
+};
+
+// ✅ COMPLETED: Input System Updates
+// - Player 1: WASD/Arrow keys + mouse shooting
+// - Player 2 (Mob King): IJKL movement + P directional shooting
+
+// ✅ COMPLETED: Weapon System Updates  
+void handleMobKingShooting(ECS &ecs, float deltaTime);      // Human Mob King shooting
+void handleRegularMobShooting(ECS &ecs, float deltaTime);   // AI mob shooting
+
+// ✅ COMPLETED: Smart shooting mechanics
+// - Mob King: Shoots in movement direction (IJKL-based)
+// - Regular mobs: Auto-aim at player (single player Level 4 only)
+// - Dual player: Only human Mob King can shoot
+```
 
 #### Game Design:
 
@@ -287,26 +337,47 @@ struct MultiplayerGameState {
 
 **Status**: ✅ **IMPLEMENTED AND WORKING**
 
-- ✅ Add main menu with Single Player / Multiplayer options
-- ✅ Menu navigation with W/S and arrow keys
+- ✅ Add main menu with Single Player / Dual Player / Multiplayer options
+- ✅ Menu navigation with W/S and arrow keys  
 - ✅ Proper menu centering and state management
 - ✅ Clean separation between menu and game UI
 - ✅ JSON-configurable menu system with entities.json
-- 🚧 Add Host/Join game interface (NEXT)
-- 🚧 Add lobby screen with "waiting for player" status (NEXT)
-- 🚧 Add dice roll system for role selection priority (NEXT)
-- 🚧 Add role selection interface (winner picks first) (NEXT)
+- ✅ Host/Join game interface for multiplayer preparation
+- ✅ Lobby screen with "waiting for player" status
+- ✅ NetworkSystem integration (foundation ready)
 
-**Implementation Notes**:
+**✅ Phase 4b-alternate: Dual Player Local Mode** (COMPLETED)
 
-- ✅ MenuSystem class with complete navigation and state management
-- ✅ Supports both WASD and arrow key navigation
-- ✅ Proper entity cleanup during state transitions
-- ✅ Center-positioned menu at 640x360 (1280x720 screen)
-- ✅ No UI overlap with game messages
-- ✅ Single Player mode launches successfully
+**Status**: ✅ **IMPLEMENTED AND WORKING** - Human vs Human local multiplayer!
 
-**🚀 Phase 4b: Networking Foundation** (CURRENT PRIORITY - 2-3 days)
+- ✅ Added "Dual Player" menu option between Single Player and Multiplayer
+- ✅ GameManager support for DUAL_PLAYER_LOCAL mode
+- ✅ Mob King spawning system (Level 2+, 150 health, combat ready)
+- ✅ **Human Mob King Controls**: IJKL movement + P directional shooting
+- ✅ **InputSystem Updates**: Player 1 (WASD+mouse) vs Player 2 (IJKL+P)
+- ✅ **WeaponSystem Updates**: Mob King shoots in facing direction, not auto-aim
+- ✅ Smart combat system: Only human Mob King can shoot in dual player mode
+- ✅ Balanced spawn rates: Regular mobs spawn at 2x interval when Mob King present
+- ✅ Health component added for boss entities
+- ✅ Complete game reset system for mode switching
+- ✅ Mob King stats: Damage=30, Range=600, FireRate=1.5, Health=150
+
+**New Controls Added:**
+```
+Player 1 (Survivor):     Player 2 (Mob King):
+- WASD/Arrow movement    - I J K L movement
+- Mouse aim & click      - P to shoot (facing direction)
+```
+
+**Implementation Advantages:**
+- **Local Couch Co-op**: Perfect 2-player local experience
+- **Code Reuse Ready**: Local mechanics will translate directly to online multiplayer
+- **Balanced Combat**: Human vs Human tested dynamics
+- **Menu Flow**: Complete navigation between Single → Dual → Multiplayer ready
+- **Input Separation**: Clear control schemes for both players
+- **Network Preparation**: All game mode infrastructure ready for online implementation
+
+**🚀 Phase 4b: Networking Foundation** (NEXT PRIORITY - 2-3 days)
 
 **Goal**: Implement basic networking infrastructure for P2P multiplayer
 

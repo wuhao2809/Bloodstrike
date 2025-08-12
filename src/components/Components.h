@@ -145,6 +145,15 @@ struct Weapon
           range(range), fireTimer(0.0f), canFire(true) {}
 };
 
+struct Health
+{
+    float currentHealth;
+    float maxHealth;
+
+    Health(float current = 100.0f, float max = 100.0f)
+        : currentHealth(current), maxHealth(max) {}
+};
+
 struct Projectile
 {
     float speed;
