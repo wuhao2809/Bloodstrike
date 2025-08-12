@@ -161,7 +161,7 @@
   "menus": {
     "mainMenu": {
       "title": "BLOODSTRIKE 2D",
-      "titlePosition": { "x": 640, "y": 200 },
+      "titlePosition": { "x": 640, "y": 150 },
       "titleFont": "fonts/Xolonium-Regular.ttf",
       "titleSize": 48,
       "options": [
@@ -185,7 +185,7 @@
       "optionFont": "fonts/Xolonium-Regular.ttf",
       "optionSize": 32,
       "optionSpacing": 60,
-      "startPosition": { "x": 640, "y": 300 },
+      "startPosition": { "x": 640, "y": 250 },
       "colors": {
         "normal": { "r": 255, "g": 255, "b": 255, "a": 255 },
         "selected": { "r": 255, "g": 255, "b": 0, "a": 255 },

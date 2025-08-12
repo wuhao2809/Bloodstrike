@@ -9,11 +9,10 @@ InputSystem::InputSystem()
 
 void InputSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
 {
-    // Handle game state inputs
+    // Handle game state inputs (only for non-menu states)
     if (keyboardState[SDL_SCANCODE_SPACE])
     {
-        if (gameManager.currentState == GameManager::MENU ||
-            gameManager.currentState == GameManager::GAME_OVER)
+        if (gameManager.currentState == GameManager::GAME_OVER)
         {
             // Clear all existing mobs before starting new game
             clearAllMobs(ecs);

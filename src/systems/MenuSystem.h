@@ -30,6 +30,7 @@ public:
 
     void update(ECS &ecs, GameManager &gameManager, float deltaTime) override;
     void loadMenuConfig(const json &config);
+    void cleanupMenuEntities(ECS &ecs);
 
 private:
     void handleInput(GameManager &gameManager);

@@ -14,21 +14,28 @@ MenuSystem::~MenuSystem()
 
 void MenuSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
 {
-    // Only handle menu when in menu state
-    if (gameManager.currentState != GameManager::MENU)
+    // Handle menu when in menu state
+    if (gameManager.currentState == GameManager::MENU)
     {
-        return;
+        // Create menu entities if they don't exist
+        if (!menuEntitiesCreated)
+        {
+            createMenuEntities(ecs);
+            menuEntitiesCreated = true;
+        }
+        
+        handleInput(gameManager);
+        updateMenuDisplay(ecs);
     }
-
-    // Create menu entities if they don't exist
-    if (!menuEntitiesCreated)
+    else
     {
-        createMenuEntities(ecs);
-        menuEntitiesCreated = true;
+        // Clean up menu entities when not in menu state
+        if (menuEntitiesCreated)
+        {
+            cleanupMenuEntities(ecs);
+            menuEntitiesCreated = false;
+        }
     }
-
-    handleInput(gameManager);
-    updateMenuDisplay(ecs);
 }
 
 void MenuSystem::loadMenuConfig(const json &config)
@@ -64,14 +71,14 @@ void MenuSystem::loadMenuConfig(const json &config)
 
 void MenuSystem::handleInput(GameManager &gameManager)
 {
-    // Handle menu navigation
-    if (isKeyPressed(SDL_SCANCODE_UP) && !keyPressed)
+    // Handle menu navigation - support both arrow keys and WASD
+    if ((isKeyPressed(SDL_SCANCODE_UP) || isKeyPressed(SDL_SCANCODE_W)) && !keyPressed)
     {
         selectedOption = (selectedOption - 1 + menuOptions.size()) % menuOptions.size();
         keyPressed = true;
         std::cout << "Menu selection: " << selectedOption << " (" << menuOptions[selectedOption] << ")" << std::endl;
     }
-    else if (isKeyPressed(SDL_SCANCODE_DOWN) && !keyPressed)
+    else if ((isKeyPressed(SDL_SCANCODE_DOWN) || isKeyPressed(SDL_SCANCODE_S)) && !keyPressed)
     {
         selectedOption = (selectedOption + 1) % menuOptions.size();
         keyPressed = true;
@@ -103,8 +110,8 @@ void MenuSystem::createMenuEntities(ECS &ecs)
     EntityID titleEntity = ecs.createEntity();
 
     std::string titleText = "BLOODSTRIKE 2D";
-    float titleX = 640.0f;
-    float titleY = 200.0f;
+    float titleX = 640.0f;  // Center X (1280/2)
+    float titleY = 150.0f;  // Higher up to center the whole menu
 
     // Use config if available
     if (!menuConfig.empty())
@@ -125,8 +132,8 @@ void MenuSystem::createMenuEntities(ECS &ecs)
     menuEntityIDs.push_back(titleEntity);
 
     // Create menu option entities
-    float startX = 640.0f;
-    float startY = 300.0f;
+    float startX = 640.0f;  // Center X (1280/2)
+    float startY = 250.0f;  // Start options below title
     float spacing = 60.0f;
 
     // Use config if available
@@ -184,7 +191,7 @@ void MenuSystem::updateMenuDisplay(ECS &ecs)
             if (!uiPosition)
                 continue;
 
-            float startY = 300.0f;
+            float startY = 250.0f;  // Match the new default startY
             float spacing = 60.0f;
 
             if (!menuConfig.empty())
@@ -241,4 +248,18 @@ void MenuSystem::executeMenuAction(const std::string &action, GameManager &gameM
 bool MenuSystem::isKeyPressed(SDL_Scancode key)
 {
     return keyboardState[key] != 0;
+}
+
+void MenuSystem::cleanupMenuEntities(ECS &ecs)
+{
+    std::cout << "Cleaning up menu entities..." << std::endl;
+    
+    // Remove all menu entities
+    for (EntityID entityID : menuEntityIDs)
+    {
+        ecs.removeEntity(entityID);
+    }
+    
+    menuEntityIDs.clear();
+    std::cout << "Menu entities cleaned up" << std::endl;
 }

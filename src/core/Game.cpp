@@ -346,8 +346,8 @@ void Game::updateUI()
             switch (gameManager.currentState)
             {
             case GameManager::MENU:
-                uiText.content = "Bloodstrike 2D! Press SPACE to start";
-                uiText.visible = true;
+                // Hide game message during menu - MenuSystem handles the menu UI
+                uiText.visible = false;
                 break;
             case GameManager::PLAYING:
                 uiText.visible = false;
