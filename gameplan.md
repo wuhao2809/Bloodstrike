@@ -191,9 +191,11 @@ void renderCrosshair(SDL_Renderer* renderer, float mouseX, float mouseY);
 
 ---
 
-### 🚀 **Phase 4: Multiplayer P2P System** (NEXT PRIORITY)
+### 🚀 **Phase 4: Multiplayer P2P System** (IN PROGRESS)
 
 **Goal**: Implement peer-to-peer multiplayer with asymmetric Player vs Mob King gameplay
+
+**Current Status**: Phase 4a (Menu System) ✅ COMPLETED, moving to Phase 4b (Networking Foundation)
 
 #### Game Design:
 
@@ -281,19 +283,55 @@ struct MultiplayerGameState {
 
 #### Implementation Phases:
 
-**Phase 4a: Menu System Enhancement** (1-2 days)
+**✅ Phase 4a: Menu System Enhancement** (COMPLETED)
 
-- Add main menu with Single Player / Multiplayer options
-- Add Host/Join game interface
-- Add lobby screen with "waiting for player" status
-- Add dice roll system for role selection priority
-- Add role selection interface (winner picks first)
+**Status**: ✅ **IMPLEMENTED AND WORKING**
 
-**Phase 4b: Networking Foundation** (2-3 days)
+- ✅ Add main menu with Single Player / Multiplayer options
+- ✅ Menu navigation with W/S and arrow keys
+- ✅ Proper menu centering and state management
+- ✅ Clean separation between menu and game UI
+- ✅ JSON-configurable menu system with entities.json
+- 🚧 Add Host/Join game interface (NEXT)
+- 🚧 Add lobby screen with "waiting for player" status (NEXT)
+- 🚧 Add dice roll system for role selection priority (NEXT)
+- 🚧 Add role selection interface (winner picks first) (NEXT)
 
-- Implement SDL_net TCP P2P networking
-- Create NetworkSystem for message handling
-- Implement basic client-server handshake
+**Implementation Notes**:
+
+- ✅ MenuSystem class with complete navigation and state management
+- ✅ Supports both WASD and arrow key navigation
+- ✅ Proper entity cleanup during state transitions
+- ✅ Center-positioned menu at 640x360 (1280x720 screen)
+- ✅ No UI overlap with game messages
+- ✅ Single Player mode launches successfully
+
+**🚀 Phase 4b: Networking Foundation** (CURRENT PRIORITY - 2-3 days)
+
+**Goal**: Implement basic networking infrastructure for P2P multiplayer
+
+- 🚧 Implement SDL_net TCP P2P networking
+- 🚧 Create NetworkSystem for message handling  
+- 🚧 Implement basic client-server handshake
+- 🚧 Add Host/Join game interface to menu system
+- 🚧 Add lobby screen with "waiting for player" status
+- 🚧 Handle connection/disconnection events
+
+**Key Components Needed**:
+```cpp
+class NetworkSystem : public System {
+    // TCP socket management
+    // Message serialization/deserialization  
+    // Connection state handling
+};
+
+struct NetworkMessage {
+    MessageType type;
+    uint32_t playerID;
+    uint32_t timestamp;
+    // Message payload
+};
+```
 
 **Phase 4c: Game State Synchronization** (2-3 days)
 

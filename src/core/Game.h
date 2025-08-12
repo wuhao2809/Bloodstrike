@@ -43,6 +43,9 @@ private:
     std::unique_ptr<WeaponSystem> weaponSystem;
     std::unique_ptr<ProjectileSystem> projectileSystem;
 
+    // Bloodstrike 2D Networking Systems
+    std::unique_ptr<NetworkSystem> networkSystem;
+
     // TODO: Systems to be implemented in Phase 4
     // std::unique_ptr<HudSystem> hudSystem;
     // std::unique_ptr<CleanupSystem> cleanupSystem;    // Entity IDs

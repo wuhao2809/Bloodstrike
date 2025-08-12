@@ -10,6 +10,7 @@ pkg_check_modules(SDL2 REQUIRED sdl2)
 pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
 pkg_check_modules(SDL2_TTF REQUIRED SDL2_ttf)
 pkg_check_modules(SDL2_MIXER REQUIRED SDL2_mixer)
+pkg_check_modules(SDL2_NET REQUIRED SDL2_net)
 
 # Find nlohmann/json
 find_package(nlohmann_json REQUIRED)
@@ -19,6 +20,7 @@ include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
 include_directories(${SDL2_TTF_INCLUDE_DIRS})
 include_directories(${SDL2_MIXER_INCLUDE_DIRS})
+include_directories(${SDL2_NET_INCLUDE_DIRS})
 include_directories(src)
 include_directories(src/core)
 include_directories(src/components)
@@ -37,6 +39,7 @@ target_link_libraries(${PROJECT_NAME}
     "/opt/homebrew/lib/libSDL2_image.dylib"
     "/opt/homebrew/lib/libSDL2_ttf.dylib"
     "/opt/homebrew/lib/libSDL2_mixer.dylib"
+    "/opt/homebrew/lib/libSDL2_net.dylib"
     nlohmann_json::nlohmann_json
 )
 

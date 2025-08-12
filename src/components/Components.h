@@ -175,3 +175,58 @@ struct ProjectileColor
 struct WeaponTag
 {
 };
+
+// ========== BLOODSTRIKE 2D NETWORKING COMPONENTS ==========
+
+enum class PlayerRole
+{
+    NONE,
+    PLAYER,
+    MOB_KING
+};
+
+enum class NetworkState
+{
+    DISCONNECTED,
+    CONNECTING,
+    CONNECTED,
+    HOST_WAITING,
+    CLIENT_JOINING,
+    LOBBY,
+    IN_GAME
+};
+
+struct NetworkPlayer
+{
+    uint32_t playerID;
+    PlayerRole role;
+    bool isLocal;
+    bool isConnected;
+
+    NetworkPlayer(uint32_t id = 0, PlayerRole r = PlayerRole::NONE, bool local = false)
+        : playerID(id), role(r), isLocal(local), isConnected(false) {}
+};
+
+struct MobKing
+{
+    float accelerationBoost = 2.0f;
+    float boostDuration = 1.0f;
+    float boostCooldown = 3.0f;
+    float boostTimer = 0.0f;
+    bool isAccelerating = false;
+    float respawnTimer = 0.0f;
+    bool isDead = false;
+
+    MobKing() = default;
+};
+
+struct MultiplayerGameState
+{
+    float survivalTimer = 120.0f; // 2 minutes
+    float difficultyMultiplier = 1.0f;
+    uint32_t playerEntityID = 0;
+    uint32_t mobKingEntityID = 0;
+    bool gameActive = false;
+
+    MultiplayerGameState() = default;
+};

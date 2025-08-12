@@ -191,6 +191,63 @@
         "selected": { "r": 255, "g": 255, "b": 0, "a": 255 },
         "background": { "r": 32, "g": 32, "b": 64, "a": 255 }
       }
+    },
+    "multiplayerMenu": {
+      "title": "MULTIPLAYER",
+      "titlePosition": { "x": 640, "y": 150 },
+      "titleFont": "fonts/Xolonium-Regular.ttf",
+      "titleSize": 48,
+      "options": [
+        {
+          "text": "Host Game",
+          "action": "host"
+        },
+        {
+          "text": "Join Game",
+          "action": "join"
+        },
+        {
+          "text": "Back",
+          "action": "back"
+        }
+      ],
+      "optionFont": "fonts/Xolonium-Regular.ttf",
+      "optionSize": 32,
+      "optionSpacing": 60,
+      "startPosition": { "x": 640, "y": 250 },
+      "colors": {
+        "normal": { "r": 255, "g": 255, "b": 255, "a": 255 },
+        "selected": { "r": 255, "g": 255, "b": 0, "a": 255 },
+        "background": { "r": 32, "g": 32, "b": 64, "a": 255 }
+      }
+    },
+    "lobbyWaiting": {
+      "title": "WAITING FOR PLAYERS...",
+      "titlePosition": { "x": 640, "y": 200 },
+      "titleFont": "fonts/Xolonium-Regular.ttf",
+      "titleSize": 36,
+      "options": [
+        {
+          "text": "Cancel",
+          "action": "back"
+        }
+      ],
+      "optionFont": "fonts/Xolonium-Regular.ttf",
+      "optionSize": 28,
+      "optionSpacing": 60,
+      "startPosition": { "x": 640, "y": 400 },
+      "colors": {
+        "normal": { "r": 255, "g": 255, "b": 255, "a": 255 },
+        "selected": { "r": 255, "g": 255, "b": 0, "a": 255 },
+        "background": { "r": 32, "g": 32, "b": 64, "a": 255 }
+      },
+      "statusText": {
+        "position": { "x": 640, "y": 300 },
+        "text": "Connection Status: Waiting...",
+        "font": "fonts/Xolonium-Regular.ttf",
+        "fontSize": 24,
+        "color": { "r": 200, "g": 200, "b": 200, "a": 255 }
+      }
     }
   }
 }

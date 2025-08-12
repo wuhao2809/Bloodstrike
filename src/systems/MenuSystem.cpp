@@ -1,4 +1,5 @@
 #include "MenuSystem.h"
+#include "NetworkSystem.h"
 #include "../components/Components.h"
 #include <iostream>
 
@@ -23,7 +24,7 @@ void MenuSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
             createMenuEntities(ecs);
             menuEntitiesCreated = true;
         }
-        
+
         handleInput(gameManager);
         updateMenuDisplay(ecs);
     }
@@ -40,9 +41,43 @@ void MenuSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
 
 void MenuSystem::loadMenuConfig(const json &config)
 {
-    if (config.contains("menus") && config["menus"].contains("mainMenu"))
+    if (config.contains("menus"))
     {
-        menuConfig = config["menus"]["mainMenu"];
+        allMenuConfigs = config["menus"];
+        loadCurrentMenuConfig();
+    }
+    else
+    {
+        std::cerr << "Warning: No menu configuration found in JSON" << std::endl;
+
+        // Default menu options
+        menuOptions = {"Single Player", "Multiplayer", "Settings", "Quit"};
+        menuActions = {"singleplayer", "multiplayer", "settings", "quit"};
+    }
+}
+
+void MenuSystem::loadCurrentMenuConfig()
+{
+    std::string menuKey;
+    switch (currentMenuState)
+    {
+    case MenuState::MAIN_MENU:
+        menuKey = "mainMenu";
+        break;
+    case MenuState::MULTIPLAYER_MENU:
+        menuKey = "multiplayerMenu";
+        break;
+    case MenuState::LOBBY_WAITING:
+        menuKey = "lobbyWaiting";
+        break;
+    default:
+        menuKey = "mainMenu";
+        break;
+    }
+
+    if (allMenuConfigs.contains(menuKey))
+    {
+        menuConfig = allMenuConfigs[menuKey];
 
         // Load menu options
         menuOptions.clear();
@@ -57,13 +92,13 @@ void MenuSystem::loadMenuConfig(const json &config)
             }
         }
 
-        std::cout << "Loaded " << menuOptions.size() << " menu options" << std::endl;
+        std::cout << "Loaded " << menuOptions.size() << " menu options for " << menuKey << std::endl;
     }
     else
     {
-        std::cerr << "Warning: No menu configuration found in JSON" << std::endl;
-
-        // Default menu options
+        std::cerr << "Menu configuration not found for: " << menuKey << std::endl;
+        
+        // Fallback to basic menu
         menuOptions = {"Single Player", "Multiplayer", "Settings", "Quit"};
         menuActions = {"singleplayer", "multiplayer", "settings", "quit"};
     }
@@ -106,12 +141,15 @@ void MenuSystem::createMenuEntities(ECS &ecs)
 {
     std::cout << "Creating menu entities..." << std::endl;
 
+    // Clean up any existing menu entities first
+    cleanupMenuEntities(ecs);
+
     // Create title entity
     EntityID titleEntity = ecs.createEntity();
 
     std::string titleText = "BLOODSTRIKE 2D";
-    float titleX = 640.0f;  // Center X (1280/2)
-    float titleY = 150.0f;  // Higher up to center the whole menu
+    float titleX = 640.0f; // Center X (1280/2)
+    float titleY = 150.0f; // Higher up to center the whole menu
 
     // Use config if available
     if (!menuConfig.empty())
@@ -132,8 +170,8 @@ void MenuSystem::createMenuEntities(ECS &ecs)
     menuEntityIDs.push_back(titleEntity);
 
     // Create menu option entities
-    float startX = 640.0f;  // Center X (1280/2)
-    float startY = 250.0f;  // Start options below title
+    float startX = 640.0f; // Center X (1280/2)
+    float startY = 250.0f; // Start options below title
     float spacing = 60.0f;
 
     // Use config if available
@@ -191,7 +229,7 @@ void MenuSystem::updateMenuDisplay(ECS &ecs)
             if (!uiPosition)
                 continue;
 
-            float startY = 250.0f;  // Match the new default startY
+            float startY = 250.0f; // Match the new default startY
             float spacing = 60.0f;
 
             if (!menuConfig.empty())
@@ -230,8 +268,55 @@ void MenuSystem::executeMenuAction(const std::string &action, GameManager &gameM
     }
     else if (action == "multiplayer")
     {
-        std::cout << "Multiplayer not yet implemented" << std::endl;
-        // TODO: Implement multiplayer menu
+        std::cout << "Switching to multiplayer menu..." << std::endl;
+        currentMenuState = MenuState::MULTIPLAYER_MENU;
+        selectedOption = 0;
+        loadCurrentMenuConfig(); // Load the new menu config
+        menuEntitiesCreated = false; // Force recreation of menu entities
+    }
+    else if (action == "host")
+    {
+        std::cout << "Starting host..." << std::endl;
+        if (networkSystem && networkSystem->startHost())
+        {
+            currentMenuState = MenuState::LOBBY_WAITING;
+            selectedOption = 0;
+            loadCurrentMenuConfig(); // Load the new menu config
+            menuEntitiesCreated = false;
+        }
+        else
+        {
+            std::cerr << "Failed to start host" << std::endl;
+        }
+    }
+    else if (action == "join")
+    {
+        std::cout << "Joining game at localhost..." << std::endl;
+        if (networkSystem && networkSystem->joinGame("127.0.0.1"))
+        {
+            currentMenuState = MenuState::LOBBY_WAITING;
+            selectedOption = 0;
+            loadCurrentMenuConfig(); // Load the new menu config
+            menuEntitiesCreated = false;
+        }
+        else
+        {
+            std::cerr << "Failed to join game" << std::endl;
+        }
+    }
+    else if (action == "back")
+    {
+        std::cout << "Going back to main menu..." << std::endl;
+        currentMenuState = MenuState::MAIN_MENU;
+        selectedOption = 0;
+        loadCurrentMenuConfig(); // Load the new menu config
+        menuEntitiesCreated = false;
+        
+        // Disconnect if connected
+        if (networkSystem)
+        {
+            networkSystem->disconnect();
+        }
     }
     else if (action == "settings")
     {
@@ -252,14 +337,19 @@ bool MenuSystem::isKeyPressed(SDL_Scancode key)
 
 void MenuSystem::cleanupMenuEntities(ECS &ecs)
 {
-    std::cout << "Cleaning up menu entities..." << std::endl;
+    if (menuEntityIDs.empty())
+    {
+        return; // Nothing to clean up
+    }
     
+    std::cout << "Cleaning up " << menuEntityIDs.size() << " menu entities..." << std::endl;
+
     // Remove all menu entities
     for (EntityID entityID : menuEntityIDs)
     {
         ecs.removeEntity(entityID);
     }
-    
+
     menuEntityIDs.clear();
     std::cout << "Menu entities cleaned up" << std::endl;
 }

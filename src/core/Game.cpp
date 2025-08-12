@@ -110,6 +110,12 @@ bool Game::initialize()
     weaponSystem = std::make_unique<WeaponSystem>(entityFactory.get(), audioSystem.get());
     projectileSystem = std::make_unique<ProjectileSystem>();
 
+    // Initialize Bloodstrike 2D networking systems
+    networkSystem = std::make_unique<NetworkSystem>();
+    
+    // Connect MenuSystem with NetworkSystem
+    menuSystem->setNetworkSystem(networkSystem.get());
+
     // Initialize audio system
     if (!audioSystem->initialize())
     {
@@ -235,6 +241,9 @@ void Game::gameLoop()
 
     // 2. Handle menu system (always active)
     menuSystem->update(ecs, gameManager, deltaTime);
+
+    // 2.5. Handle networking system (always active)
+    networkSystem->update(ecs, gameManager, deltaTime);
 
     // 3. Handle input
     inputSystem->update(ecs, gameManager, deltaTime);

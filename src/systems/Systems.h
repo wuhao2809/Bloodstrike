@@ -15,6 +15,7 @@
 #include "WeaponSystem.h"
 #include "ProjectileSystem.h"
 #include "MenuSystem.h"
+#include "NetworkSystem.h"
 
 // Forward declarations for systems not yet implemented will be added in Phase 4
 // class HudSystem;
