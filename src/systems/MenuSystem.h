@@ -33,9 +33,9 @@ private:
     // Menu configuration
     json menuConfig;
     json allMenuConfigs;
-    
+
     // Network reference (will be set by Game)
-    class NetworkSystem* networkSystem = nullptr;
+    class NetworkSystem *networkSystem = nullptr;
 
 public:
     MenuSystem();
@@ -44,7 +44,7 @@ public:
     void update(ECS &ecs, GameManager &gameManager, float deltaTime) override;
     void loadMenuConfig(const json &config);
     void cleanupMenuEntities(ECS &ecs);
-    void setNetworkSystem(NetworkSystem* network) { networkSystem = network; }
+    void setNetworkSystem(NetworkSystem *network) { networkSystem = network; }
 
 private:
     void handleInput(GameManager &gameManager);
@@ -53,7 +53,7 @@ private:
     void executeMenuAction(const std::string &action, GameManager &gameManager);
     bool isKeyPressed(SDL_Scancode key);
     void loadCurrentMenuConfig();
-    
+
     // Menu state management
     void switchToMainMenu(ECS &ecs);
     void switchToMultiplayerMenu(ECS &ecs);

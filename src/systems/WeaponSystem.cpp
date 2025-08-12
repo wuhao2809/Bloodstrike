@@ -135,7 +135,7 @@ void WeaponSystem::handleMobShooting(ECS &ecs, GameManager &gameManager, float d
     {
         handleMobKingShooting(ecs, deltaTime);
     }
-    
+
     // Handle regular mob shooting (only at level 4 in single player mode)
     if (gameManager.isSinglePlayer() && gameManager.canMobsShoot())
     {
@@ -147,13 +147,13 @@ void WeaponSystem::handleMobKingShooting(ECS &ecs, float deltaTime)
 {
     // Find Mob King entities
     auto &mobKingEntities = ecs.getComponents<MobKing>();
-    
+
     for (auto &[mobKingEntityID, mobKing] : mobKingEntities)
     {
         Weapon *weapon = ecs.getComponent<Weapon>(mobKingEntityID);
         Transform *transform = ecs.getComponent<Transform>(mobKingEntityID);
         MovementDirection *movementDir = ecs.getComponent<MovementDirection>(mobKingEntityID);
-        
+
         if (!weapon || !transform || !movementDir)
             continue;
         if (!weapon->canFire)
@@ -166,16 +166,19 @@ void WeaponSystem::handleMobKingShooting(ECS &ecs, float deltaTime)
 
         // Determine shooting direction based on movement direction
         float dirX = 0.0f, dirY = 0.0f;
-        
+
         if (movementDir->direction == MovementDirection::HORIZONTAL)
         {
             // Check last movement for horizontal direction
             Velocity *velocity = ecs.getComponent<Velocity>(mobKingEntityID);
             if (velocity)
             {
-                if (velocity->x > 0) dirX = 1.0f;      // Moving right, shoot right
-                else if (velocity->x < 0) dirX = -1.0f; // Moving left, shoot left
-                else dirX = -1.0f; // Default to shooting left if stationary
+                if (velocity->x > 0)
+                    dirX = 1.0f; // Moving right, shoot right
+                else if (velocity->x < 0)
+                    dirX = -1.0f; // Moving left, shoot left
+                else
+                    dirX = -1.0f; // Default to shooting left if stationary
             }
         }
         else // VERTICAL
@@ -184,9 +187,12 @@ void WeaponSystem::handleMobKingShooting(ECS &ecs, float deltaTime)
             Velocity *velocity = ecs.getComponent<Velocity>(mobKingEntityID);
             if (velocity)
             {
-                if (velocity->y > 0) dirY = 1.0f;      // Moving down, shoot down
-                else if (velocity->y < 0) dirY = -1.0f; // Moving up, shoot up
-                else dirY = -1.0f; // Default to shooting up if stationary
+                if (velocity->y > 0)
+                    dirY = 1.0f; // Moving down, shoot down
+                else if (velocity->y < 0)
+                    dirY = -1.0f; // Moving up, shoot up
+                else
+                    dirY = -1.0f; // Default to shooting up if stationary
             }
         }
 

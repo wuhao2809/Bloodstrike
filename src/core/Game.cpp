@@ -112,7 +112,7 @@ bool Game::initialize()
 
     // Initialize Bloodstrike 2D networking systems
     networkSystem = std::make_unique<NetworkSystem>();
-    
+
     // Connect MenuSystem with NetworkSystem
     menuSystem->setNetworkSystem(networkSystem.get());
 

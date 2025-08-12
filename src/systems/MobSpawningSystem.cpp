@@ -283,8 +283,8 @@ void MobSpawningSystem::spawnMobKing(ECS &ecs, GameManager &gameManager)
     weapon.maxAmmo = 999;
     ecs.addComponent(mobKingEntity, weapon);
 
-    std::cout << "Mob King spawned at (" << transform.x << ", " << transform.y 
+    std::cout << "Mob King spawned at (" << transform.x << ", " << transform.y
               << ") with " << health.currentHealth << " health and combat abilities!" << std::endl;
-    std::cout << "Mob King stats: Damage=" << weapon.damage << ", Range=" << weapon.range 
+    std::cout << "Mob King stats: Damage=" << weapon.damage << ", Range=" << weapon.range
               << ", Fire Rate=" << weapon.fireRate << std::endl;
 }

@@ -99,6 +99,22 @@ void RenderSystem::renderSprites(ECS &ecs)
 
                 // Always reload texture to handle animation changes
                 needsTextureReload = true;
+            }
+            else if (entityType && entityType->type == "mobKing")
+            {
+                // For Mob King, use flying enemy texture to make it more visible
+                int frameNumber = 1; // Default to frame 1
+
+                // Get current animation frame
+                if (animation && sprite->animated && sprite->frameCount > 1)
+                {
+                    frameNumber = (animation->currentFrame % sprite->frameCount) + 1;
+                }
+
+                texturePath = "art/enemyFlyingAlt_" + std::to_string(frameNumber) + ".png";
+
+                // Always reload texture to handle animation changes
+                needsTextureReload = true;
             } // Load or reload texture if needed
             if (needsTextureReload && !texturePath.empty())
             {
@@ -135,9 +151,9 @@ void RenderSystem::renderSprites(ECS &ecs)
                         flipFlags = SDL_FLIP_VERTICAL;
                     }
                 }
-                else if (entityType && (entityType->type == "flying" || entityType->type == "swimming" || entityType->type == "walking") && velocity)
+                else if (entityType && (entityType->type == "flying" || entityType->type == "swimming" || entityType->type == "walking" || entityType->type == "mobKing") && velocity)
                 {
-                    // Flip mob sprites based on movement direction
+                    // Flip mob sprites and mob king based on movement direction
                     auto *movementDir = ecs.getComponent<MovementDirection>(entityID);
                     if (movementDir)
                     {

@@ -26,7 +26,11 @@ private:
 public:
     MobSpawningSystem(EntityFactory *factory, float screenW, float screenH);
     void update(ECS &ecs, GameManager &gameManager, float deltaTime) override;
-    void reset() { mobKingSpawned = false; timeSinceLastSpawn = 0.0f; }
+    void reset()
+    {
+        mobKingSpawned = false;
+        timeSinceLastSpawn = 0.0f;
+    }
 
 private:
     void spawnMob(ECS &ecs, GameManager &gameManager);

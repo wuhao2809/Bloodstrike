@@ -97,7 +97,7 @@ void MenuSystem::loadCurrentMenuConfig()
     else
     {
         std::cerr << "Menu configuration not found for: " << menuKey << std::endl;
-        
+
         // Fallback to basic menu
         menuOptions = {"Single Player", "Multiplayer", "Settings", "Quit"};
         menuActions = {"singleplayer", "multiplayer", "settings", "quit"};
@@ -276,7 +276,7 @@ void MenuSystem::executeMenuAction(const std::string &action, GameManager &gameM
         std::cout << "Switching to multiplayer menu..." << std::endl;
         currentMenuState = MenuState::MULTIPLAYER_MENU;
         selectedOption = 0;
-        loadCurrentMenuConfig(); // Load the new menu config
+        loadCurrentMenuConfig();     // Load the new menu config
         menuEntitiesCreated = false; // Force recreation of menu entities
     }
     else if (action == "host")
@@ -316,7 +316,7 @@ void MenuSystem::executeMenuAction(const std::string &action, GameManager &gameM
         selectedOption = 0;
         loadCurrentMenuConfig(); // Load the new menu config
         menuEntitiesCreated = false;
-        
+
         // Disconnect if connected
         if (networkSystem)
         {
@@ -346,7 +346,7 @@ void MenuSystem::cleanupMenuEntities(ECS &ecs)
     {
         return; // Nothing to clean up
     }
-    
+
     std::cout << "Cleaning up " << menuEntityIDs.size() << " menu entities..." << std::endl;
 
     // Remove all menu entities

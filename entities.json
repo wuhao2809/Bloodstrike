@@ -91,16 +91,16 @@
     },
     "mobKing": {
       "sprite": {
-        "texture": "art/enemyWalking_1.png",
-        "width": 120,
-        "height": 120,
+        "texture": "art/enemyFlyingAlt_1.png",
+        "width": 160,
+        "height": 160,
         "frameCount": 2,
         "frameTime": 0.2,
         "animated": true
       },
       "collider": {
-        "width": 100,
-        "height": 100,
+        "width": 130,
+        "height": 130,
         "isTrigger": false
       },
       "speedRange": { "min": 80.0, "max": 100.0 },
@@ -111,7 +111,7 @@
         "range": 600.0,
         "projectileSpeed": 400.0
       },
-      "startPosition": { "x": 1200, "y": 360 }
+      "startPosition": { "x": 1000, "y": 300 }
     }
   },
   "defaultMobCombat": {
