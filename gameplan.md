@@ -189,6 +189,345 @@ void renderCrosshair(SDL_Renderer* renderer, float mouseX, float mouseY);
 
 ---
 
+---
+
+### 🚀 **Phase 4: Multiplayer P2P System** (NEXT PRIORITY)
+
+**Goal**: Implement peer-to-peer multiplayer with asymmetric Player vs Mob King gameplay
+
+#### Game Design:
+
+**Two Game Modes:**
+
+1. **Single Player**: Current 4-level system (keep existing)
+2. **Multiplayer**: 2-minute survival challenge
+
+**Multiplayer Rules:**
+
+- **Player**: Survive 2 minutes to win (same controls as single-player)
+- **Mob King**: Kill player to win (JKIL movement, ] for acceleration boost)
+- **Dynamic Difficulty**: Linear increase in mob spawn rate and speed over 2 minutes
+- **Mob King Respawn**: 8-second timer when killed by player
+- **Victory Conditions**: Player wins if survives 2min, Mob King wins if kills player
+
+#### Technical Requirements:
+
+**Networking Layer:**
+
+- SDL_net TCP Host-Client architecture (Host has authority)
+- Game state synchronization at 60 FPS
+- Input prediction and lag compensation
+- Connection handling (join, leave, disconnect)
+
+**Collision Authority Design:**
+
+- **Host Authority**: Mob spawning, mob-player collisions, victory conditions
+- **Client Authority**: Own projectile collisions (immediate feedback)
+- **Synchronization**: Collision results synced between clients
+
+**Why This Hybrid Approach:**
+
+- **Responsive Shooting**: Players get immediate feedback when hitting mobs
+- **Fair Gameplay**: Host decides critical collisions (player death, victory)
+- **Reduced Lag**: No waiting for host confirmation on every shot
+- **Anti-Cheat**: Host validates all game-ending events
+
+**New Systems Needed:**
+
+```cpp
+class NetworkSystem : public System {
+    // Handle P2P connections, message sending/receiving
+    // Synchronize game state between players
+};
+
+class MultiplayerGameManager : public GameManager {
+    // Override single-player logic for multiplayer rules
+    // Handle role assignment (Player vs Mob King)
+    // Manage 2-minute timer and dynamic difficulty
+};
+
+class MobKingSystem : public System {
+    // Handle human-controlled mob king movement
+    // Manage acceleration boost (P key)
+    // Handle respawn timer (8 seconds)
+};
+```
+
+**New Components:**
+
+```cpp
+struct NetworkPlayer {
+    uint32_t playerID;
+    PlayerRole role; // PLAYER or MOB_KING
+    bool isLocal;
+};
+
+struct MobKing {
+    float accelerationBoost = 2.0f;
+    float boostDuration = 1.0f;
+    float boostCooldown = 3.0f;
+    bool isAccelerating = false;
+    float respawnTimer = 0.0f;
+    bool isDead = false;
+};
+
+struct MultiplayerGameState {
+    float survivalTimer = 120.0f; // 2 minutes
+    float difficultyMultiplier = 1.0f;
+    uint32_t playerID;
+    uint32_t mobKingID;
+};
+```
+
+#### Implementation Phases:
+
+**Phase 4a: Menu System Enhancement** (1-2 days)
+
+- Add main menu with Single Player / Multiplayer options
+- Add Host/Join game interface
+- Add lobby screen with "waiting for player" status
+- Add dice roll system for role selection priority
+- Add role selection interface (winner picks first)
+
+**Phase 4b: Networking Foundation** (2-3 days)
+
+- Implement SDL_net TCP P2P networking
+- Create NetworkSystem for message handling
+- Implement basic client-server handshake
+
+**Phase 4c: Game State Synchronization** (2-3 days)
+
+- Synchronize player positions and inputs
+- Handle mob spawning across both clients
+- Implement projectile synchronization
+
+**Phase 4d: Mob King System** (1-2 days)
+
+- Implement human-controlled mob king
+- Add acceleration boost mechanics (P key)
+- Add 8-second respawn system
+
+**Phase 4e: Multiplayer Game Rules** (1-2 days)
+
+- Implement 2-minute survival timer
+- Add dynamic difficulty scaling
+- Handle victory/defeat conditions
+
+**Phase 4f: Polish & Testing** (2-3 days)
+
+- Add network lag compensation
+- Handle disconnections gracefully
+- Add multiplayer UI elements
+- Extensive testing
+
+#### Technical Challenges:
+
+1. **State Synchronization**: Keep both games in sync without lag
+2. **Input Prediction**: Smooth movement despite network latency
+3. **Collision Authority**: Decide which client handles collision detection
+4. **Disconnect Handling**: Graceful degradation when connection lost
+5. **Dynamic Difficulty**: Smooth scaling over 2 minutes
+
+#### Network Protocol Design:
+
+```cpp
+enum MessageType {
+    // Connection & Lobby
+    CONNECTION_REQUEST,  // Join game request
+    CONNECTION_ACCEPT,   // Connection established
+    DICE_ROLL_REQUEST,   // Initiate dice roll
+    DICE_ROLL_RESULT,    // Dice roll outcome
+    ROLE_SELECTION,      // Player chooses role
+    GAME_START,          // Begin multiplayer match
+
+    // Game Play
+    PLAYER_INPUT,        // WASD + mouse + shooting
+    MOB_KING_INPUT,      // JKIL + ] acceleration
+    GAME_STATE_UPDATE,   // Positions, health, score
+    MOB_SPAWN,           // New mob creation (Host authority)
+    PROJECTILE_CREATE,   // Bullet creation
+    PROJECTILE_HIT,      // Collision result sync
+    MOB_KING_DEATH,      // Respawn timer start
+    GAME_OVER           // Victory/defeat
+};
+```
+
+---
+
+### Phase 4: Multiplayer Architecture
+
+**Main Menu Flow:**
+
+```
+Main Menu
+├── Single Player → Current 4-level system
+└── Multiplayer
+    ├── Host Game → Wait for connection
+    └── Join Game → Enter host IP
+                 ↓
+            Both Players Connected
+                 ↓
+            Dice Roll for Role Priority
+                 ↓
+            Role Selection (Winner picks first)
+                 ↓
+            Game Start → Player vs Mob King
+```
+
+**Multiplayer Game Loop:**
+
+```cpp
+class MultiplayerGameManager : public GameManager {
+private:
+    float survivalTimer = 120.0f;  // 2 minutes
+    PlayerRole localPlayerRole;
+    float difficultyProgression;
+
+public:
+    void updateMultiplayerLogic(float deltaTime) {
+        // Update 2-minute survival timer
+        survivalTimer -= deltaTime;
+
+        // Calculate dynamic difficulty (linear increase over 2 minutes)
+        difficultyProgression = 1.0f + (120.0f - survivalTimer) / 120.0f;
+
+        // Increase mob spawn rate over time
+        mobSpawnInterval = 0.5f / difficultyProgression;
+
+        // Increase mob speed over time
+        mobSpeedMultiplier = 1.0f * difficultyProgression;
+
+        // Check victory conditions
+        if (survivalTimer <= 0.0f && localPlayerRole == PLAYER) {
+            // Player wins by surviving 2 minutes
+            gameOver(PLAYER_VICTORY);
+        }
+    }
+};
+```
+
+**Network Message Structure:**
+
+```cpp
+struct NetworkMessage {
+    MessageType type;
+    uint32_t playerID;
+    uint32_t timestamp;
+    union {
+        PlayerInputData playerInput;
+        MobKingInputData mobKingInput;
+        GameStateData gameState;
+        ProjectileData projectile;
+        DiceRollData diceRoll;
+        RoleSelectionData roleSelection;
+    } data;
+};
+
+struct DiceRollData {
+    uint8_t playerDiceValue;
+    uint8_t opponentDiceValue;
+    uint32_t winnerPlayerID;
+};
+
+struct RoleSelectionData {
+    PlayerRole selectedRole; // PLAYER or MOB_KING
+    bool isConfirmed;
+};
+```
+
+**Dice Roll & Role Selection Flow:**
+
+```cpp
+class LobbySystem : public System {
+private:
+    enum LobbyState {
+        WAITING_FOR_CONNECTION,
+        DICE_ROLL_PHASE,
+        ROLE_SELECTION_PHASE,
+        READY_TO_START
+    };
+
+public:
+    void initiateDiceRoll() {
+        // Both players roll dice (1-6)
+        // Higher roll gets first pick of role
+        // Display animated dice rolling for 2-3 seconds
+        // Winner sees "You won! Choose your role first"
+        // Loser sees "Opponent won, waiting for their choice..."
+    }
+
+    void handleRoleSelection(uint32_t winnerPlayerID) {
+        // Winner picks Player or Mob King
+        // Loser automatically gets remaining role
+        // Display final role assignments
+        // 3-second countdown before game starts
+    }
+};
+```
+
+**Lobby UI Flow:**
+
+1. **Connection Phase:**
+
+   ```
+   Host: "Waiting for player to join..."
+   Join: "Connecting to [IP]..."
+   ```
+
+2. **Dice Roll Phase:**
+
+   ```
+   "Both players connected!"
+   "Rolling dice to decide role priority..."
+   [Animated dice: 🎲 🎲]
+   "You rolled: 4, Opponent rolled: 6"
+   "Opponent wins! They choose first."
+   ```
+
+3. **Role Selection Phase:**
+
+   ```
+   Winner: "Choose your role:"
+           [Player Button] [Mob King Button]
+
+   Loser:  "Waiting for opponent to choose..."
+           "Opponent chose: Player"
+           "You are: Mob King"
+   ```
+
+4. **Game Start:**
+   ```
+   "Final Roles: You=Mob King, Opponent=Player"
+   "Game starting in 3... 2... 1..."
+   ```
+
+**Dice Roll Implementation:**
+
+```cpp
+class DiceRollSystem {
+private:
+    std::random_device rd;
+    std::mt19937 gen;
+
+public:
+    DiceRollSystem() : gen(rd()) {}
+
+    uint8_t rollDice() {
+        std::uniform_int_distribution<> dis(1, 6);
+        return dis(gen);
+    }
+
+    void synchronizeDiceRoll(NetworkSystem* network) {
+        // Both players roll simultaneously
+        // Send results to each other
+        // Determine winner (higher roll wins, re-roll on tie)
+        // Winner gets first choice of role
+    }
+};
+```
+
+---
+
 ## 🛠️ Implementation Details
 
 ### Phase 1: Project Name Changes
@@ -271,20 +610,127 @@ Let's start with Phase 1 immediately:
 # Then we'll update the project name and rebuild
 ```
 
-## 🎮 New Controls (After Phase 3)
+## 🎮 New Controls (After Phase 4)
 
-- **WASD**: Movement (existing)
+**Single Player Mode** (unchanged):
+
+- **WASD**: Movement
 - **Mouse**: Aiming direction
 - **Left Click**: Shoot
-- **Right Click**: Precise aim mode (optional)
+- **ESC**: Menu/Quit
+
+**Multiplayer Mode**:
+
+_Player Role_:
+
+- **WASD**: Movement
+- **Mouse**: Aiming direction
+- **Left Click**: Shoot
+- **ESC**: Menu/Quit
+
+_Mob King Role_:
+
+- **JKIL**: Movement (reserved for local multiplayer compatibility)
+- **]**: Acceleration boost (2x speed for 1 second, 3-second cooldown)
 - **ESC**: Menu/Quit
 
 ---
 
 ## 📝 Success Criteria
 
-**Phase 1 Complete**: Game builds and runs with "Bloodstrike" name
-**Phase 2 Complete**: Game window is larger and properly scaled  
-**Phase 3 Complete**: Player can aim with mouse and shoot projectiles with visual aiming line
+**Phase 1 Complete**: Game builds and runs with "Bloodstrike" name ✅
+**Phase 2 Complete**: Game window is larger and properly scaled ✅
+**Phase 3 Complete**: Player can aim with mouse and shoot projectiles with visual aiming line ✅
+**Phase 4 Complete**:
+
+- Main menu with Single/Multiplayer options
+- P2P networking connects two players
+- Asymmetric Player vs Mob King gameplay works
+- 2-minute survival timer with dynamic difficulty
+- Mob King respawn system (8 seconds)
+- Both victory conditions work correctly
 
 Let's get started! 🔫
+
+---
+
+## 🗓️ Phase 4 Development Timeline (10-14 days)
+
+### Week 1: Foundation & Menu System
+
+**Day 1-2: Menu System Enhancement**
+
+- Add main menu with Single/Multiplayer buttons
+- Create Host/Join game interface
+- Add lobby screen with connection status
+- Add dice roll animation and logic
+- Create role selection interface
+
+**Day 3-4: Networking Foundation**
+
+- Integrate SDL_net dependency
+- Create NetworkSystem class
+- Implement basic TCP Host-Client connection
+- Test connection establishment and lobby flow
+
+**Day 5-7: Lobby System**
+
+- Implement dice roll synchronization
+- Create role selection logic
+- Add lobby state management
+- Test complete lobby flow (connect → dice → roles → start)
+
+### Week 2: Gameplay & Polish
+
+**Day 8-9: Mob King System**
+
+- Implement human-controlled mob king
+- Add acceleration boost mechanics (P key)
+- Create 8-second respawn system
+- Test mob king controls
+
+**Day 10-11: Game Rules Implementation**
+
+- Add 2-minute survival timer
+- Implement dynamic difficulty scaling
+- Handle victory/defeat conditions
+- Test complete multiplayer match
+
+**Day 12-14: Polish & Testing**
+
+- Add network lag compensation
+- Handle disconnections gracefully
+- Add multiplayer UI elements
+- Extensive testing and bug fixes
+
+---
+
+## 🎯 Development Questions & Decisions
+
+**✅ Technical Decisions Made:**
+
+1. **Control Scheme**: ✅ JKIL for Mob King (future local multiplayer), ] for acceleration
+
+2. **Network Architecture**: ✅ Host-Client model for simpler authority management
+
+3. **Collision Authority**: ✅ Hybrid approach:
+
+   - Host: Mob spawning, mob-player collisions, victory conditions
+   - Client: Own projectile collisions (immediate feedback)
+   - Sync: Results communicated between clients
+
+4. **State Synchronization**: ✅ 60 FPS for smooth gameplay
+
+5. **Dynamic Difficulty**: ✅ Linear increase over 2 minutes
+
+6. **Mob King Abilities**: ✅ Start with acceleration only (] key)
+   - Future possibilities: Dash attack, temporary invincibility, spawn extra mobs
+
+**Next Steps:**
+
+1. **Immediate**: Start with menu system enhancement
+2. **SDL_net Integration**: Add dependency to CMakeLists.txt
+3. **Architecture**: Create base networking classes
+4. **Testing Strategy**: How to test P2P locally?
+
+Would you like to start with any specific part, or shall we begin with the menu system enhancement? 🚀
