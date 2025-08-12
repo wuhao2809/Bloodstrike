@@ -87,6 +87,7 @@ bool Game::initialize()
     }
 
     // Initialize systems
+    menuSystem = std::make_unique<MenuSystem>();
     timingSystem = std::make_unique<TimingSystem>();
     inputSystem = std::make_unique<InputSystem>();
     movementSystem = std::make_unique<MovementSystem>();
@@ -99,6 +100,10 @@ bool Game::initialize()
     boundarySystem = std::make_unique<BoundarySystem>(gameManager.screenWidth,
                                                       gameManager.screenHeight);
     renderSystem = std::make_unique<RenderSystem>(renderer, resourceManager.get());
+
+    // Load menu configuration for MenuSystem
+    json fullConfig = entityFactory->getEntityConfig();
+    menuSystem->loadMenuConfig(fullConfig);
 
     // Initialize Bloodstrike 2D combat systems
     aimingSystem = std::make_unique<AimingSystem>();
@@ -228,17 +233,20 @@ void Game::gameLoop()
     // 1. Update timing and calculate delta time
     float deltaTime = timingSystem->update();
 
-    // 2. Handle input
+    // 2. Handle menu system (always active)
+    menuSystem->update(ecs, gameManager, deltaTime);
+
+    // 3. Handle input
     inputSystem->update(ecs, gameManager, deltaTime);
 
-    // 2.5. Check if player state needs to be reset (after game restart)
+    // 3.5. Check if player state needs to be reset (after game restart)
     if (gameManager.needsPlayerReset)
     {
         resetPlayerState();
         gameManager.needsPlayerReset = false; // Clear the flag
     }
 
-    // 3. Update game logic (only if playing)
+    // 4. Update game logic (only if playing)
     if (gameManager.currentState == GameManager::PLAYING)
     {
         // Movement and animation
@@ -260,13 +268,13 @@ void Game::gameLoop()
         boundarySystem->update(ecs, gameManager, deltaTime);
     }
 
-    // 4. Update UI (update text content)
+    // 5. Update UI (update text content)
     updateUI();
 
-    // 5. Render everything
+    // 6. Render everything
     renderSystem->update(ecs, gameManager, timingSystem->getFPS());
 
-    // 6. Frame limiting to maintain 60 FPS
+    // 7. Frame limiting to maintain 60 FPS
     timingSystem->limitFrameRate();
 }
 

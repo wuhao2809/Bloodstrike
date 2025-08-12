@@ -157,5 +157,40 @@
     "mobSpawnInterval": 0.5,
     "scorePerSecond": 10,
     "screenSize": { "width": 1280, "height": 720 }
+  },
+  "menus": {
+    "mainMenu": {
+      "title": "BLOODSTRIKE 2D",
+      "titlePosition": { "x": 640, "y": 200 },
+      "titleFont": "fonts/Xolonium-Regular.ttf",
+      "titleSize": 48,
+      "options": [
+        {
+          "text": "Single Player",
+          "action": "singleplayer"
+        },
+        {
+          "text": "Multiplayer",
+          "action": "multiplayer"
+        },
+        {
+          "text": "Settings",
+          "action": "settings"
+        },
+        {
+          "text": "Quit",
+          "action": "quit"
+        }
+      ],
+      "optionFont": "fonts/Xolonium-Regular.ttf",
+      "optionSize": 32,
+      "optionSpacing": 60,
+      "startPosition": { "x": 640, "y": 300 },
+      "colors": {
+        "normal": { "r": 255, "g": 255, "b": 255, "a": 255 },
+        "selected": { "r": 255, "g": 255, "b": 0, "a": 255 },
+        "background": { "r": 32, "g": 32, "b": 64, "a": 255 }
+      }
+    }
   }
 }

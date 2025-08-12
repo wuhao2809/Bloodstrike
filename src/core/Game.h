@@ -27,6 +27,7 @@ private:
     std::unique_ptr<EntityFactory> entityFactory;
 
     // Systems (order matters for execution)
+    std::unique_ptr<MenuSystem> menuSystem;
     std::unique_ptr<TimingSystem> timingSystem;
     std::unique_ptr<InputSystem> inputSystem;
     std::unique_ptr<MovementSystem> movementSystem;
