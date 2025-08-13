@@ -105,9 +105,34 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameMan
 
                 if (checkProjectileCollision(*projTransform, *projCollider, *mobTransform, *mobCollider))
                 {
-                    std::cout << "Player projectile hit mob!" << std::endl;
+                    // Check if this mob has health (like Mob King)
+                    Health *mobHealth = ecs.getComponent<Health>(mobID);
+                    if (mobHealth)
+                    {
+                        // Damage the mob's health
+                        mobHealth->currentHealth -= projectile->damage;
+                        std::cout << "Player projectile hit mob! Damage: " << projectile->damage
+                                  << ", Health remaining: " << mobHealth->currentHealth << std::endl;
+
+                        // Remove the mob if health drops to 0 or below
+                        if (mobHealth->currentHealth <= 0)
+                        {
+                            // Check if this is the Mob King
+                            if (ecs.getComponent<MobKing>(mobID))
+                            {
+                                std::cout << "Mob King defeated! Victory!" << std::endl;
+                            }
+                            ecs.removeEntity(mobID);
+                        }
+                    }
+                    else
+                    {
+                        // Regular mob without health - remove immediately
+                        std::cout << "Player projectile hit mob!" << std::endl;
+                        ecs.removeEntity(mobID);
+                    }
+
                     projectilesToRemove.push_back(projID);
-                    ecs.removeEntity(mobID);
                     break;
                 }
             }

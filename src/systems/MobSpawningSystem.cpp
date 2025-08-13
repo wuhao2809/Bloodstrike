@@ -179,7 +179,7 @@ void MobSpawningSystem::spawnMob(ECS &ecs, GameManager &gameManager)
     {
         std::cout << "Spawned " << mobType << " mob at (" << spawnX << ", " << spawnY
                   << ") with speed " << finalSpeed << " (base: " << baseSpeed
-                  << ", multiplier: " << levelSpeedMultiplier << ") - spawn interval: " 
+                  << ", multiplier: " << levelSpeedMultiplier << ") - spawn interval: "
                   << gameManager.getGameModeSpawnInterval() << "s" << std::endl;
     }
 }
@@ -274,7 +274,7 @@ void MobSpawningSystem::spawnMobKing(ECS &ecs, GameManager &gameManager)
     ecs.addComponent(mobKingEntity, weapon);
 
     std::cout << "Mob King spawned at (" << transform.x << ", " << transform.y
-              << ") with " << health.currentHealth << " health and combat abilities!" << std::endl;
+              << ") with " << health.currentHealth << "/" << health.maxHealth << " health and combat abilities!" << std::endl;
     std::cout << "Mob King stats: Damage=" << weapon.damage << ", Range=" << weapon.range
               << ", Fire Rate=" << weapon.fireRate << std::endl;
 }

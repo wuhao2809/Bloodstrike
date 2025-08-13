@@ -27,10 +27,10 @@
     "startPosition": { "x": 640, "y": 600 },
     "combat": {
       "weapon": {
-        "damage": 25.0,
+        "damage": 20.0,
         "fireRate": 5.0,
-        "ammoCount": 30,
-        "maxAmmo": 30,
+        "ammoCount": 100,
+        "maxAmmo": 100,
         "range": 800.0
       },
       "aimingLine": {
@@ -105,7 +105,7 @@
       },
       "speedRange": { "min": 80.0, "max": 100.0 },
       "combat": {
-        "health": 150.0,
+        "health": 1000.0,
         "damage": 30.0,
         "fireRate": 1.5,
         "range": 600.0,

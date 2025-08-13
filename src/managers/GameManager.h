@@ -72,7 +72,7 @@ public:
         accumulatedScore = 0.0f;
         currentLevel = 1;
         levelTime = 0.0f;
-        levelDuration = 90.0f; // 90 seconds for dual player
+        levelDuration = 20.0f;   // 90 seconds for dual player
         needsPlayerReset = true; // Request player state reset
         std::cout << "Starting Dual Player Mode - 90s battle!" << std::endl;
     }
@@ -86,7 +86,7 @@ public:
         accumulatedScore = 0.0f;
         currentLevel = 1;
         levelTime = 0.0f;
-        levelDuration = 90.0f; // 90 seconds for multiplayer
+        levelDuration = 90.0f;   // 90 seconds for multiplayer
         needsPlayerReset = true; // Request player state reset
         std::cout << "Starting Networked Multiplayer Mode - 90s battle!" << std::endl;
     }
@@ -213,7 +213,7 @@ public:
         if (currentGameMode == DUAL_PLAYER_LOCAL || currentGameMode == MULTIPLAYER_ONLINE)
         {
             // Dual/Multiplayer: mobs can shoot in last 15 seconds
-            return (levelDuration - levelTime) <= 15.0f;
+            return (levelDuration - levelTime) <= 20.0f;
         }
         return currentLevel >= 4;
     }
