@@ -17,7 +17,20 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
         {
             // Clear all existing mobs before starting new game
             clearAllMobs(ecs);
-            gameManager.startGame();
+
+            // Restart based on current game mode
+            if (gameManager.currentGameMode == GameManager::DUAL_PLAYER_LOCAL)
+            {
+                gameManager.startDualPlayerGame();
+            }
+            else if (gameManager.currentGameMode == GameManager::MULTIPLAYER_ONLINE)
+            {
+                gameManager.startNetworkedMultiplayerGame();
+            }
+            else
+            {
+                gameManager.startGame(); // Single player
+            }
         }
         else if (gameManager.currentState == GameManager::LEVEL_COMPLETE)
         {
@@ -34,10 +47,22 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
         if (gameManager.currentState == GameManager::LEVEL_COMPLETE ||
             gameManager.currentState == GameManager::PLAYING)
         {
-            // Restart the game
+            // Restart the game based on current game mode
             clearAllMobs(ecs);
             clearAllProjectiles(ecs);
-            gameManager.startGame();
+
+            if (gameManager.currentGameMode == GameManager::DUAL_PLAYER_LOCAL)
+            {
+                gameManager.startDualPlayerGame();
+            }
+            else if (gameManager.currentGameMode == GameManager::MULTIPLAYER_ONLINE)
+            {
+                gameManager.startNetworkedMultiplayerGame();
+            }
+            else
+            {
+                gameManager.startGame(); // Single player
+            }
         }
     }
 
