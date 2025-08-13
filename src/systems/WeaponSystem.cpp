@@ -136,10 +136,11 @@ void WeaponSystem::handleMobShooting(ECS &ecs, GameManager &gameManager, float d
         handleMobKingShooting(ecs, deltaTime);
     }
 
-    // Handle regular mob shooting (only at level 4 in single player mode)
-    if (gameManager.isSinglePlayer() && gameManager.canMobsShoot())
+    // Handle regular mob shooting (at level 4 in single player, or in last 15s of dual/multiplayer)
+    if ((gameManager.isSinglePlayer() && gameManager.canMobsShoot()) ||
+        (gameManager.isDualPlayer() && gameManager.canMobsShoot()))
     {
-        handleRegularMobShooting(ecs, deltaTime);
+        handleRegularMobShooting(ecs, deltaTime, gameManager);
     }
 }
 
@@ -208,7 +209,7 @@ void WeaponSystem::handleMobKingShooting(ECS &ecs, float deltaTime)
     }
 }
 
-void WeaponSystem::handleRegularMobShooting(ECS &ecs, float deltaTime)
+void WeaponSystem::handleRegularMobShooting(ECS &ecs, float deltaTime, GameManager &gameManager)
 {
     // Find player position for targeting
     float playerX = 0.0f, playerY = 0.0f;
@@ -263,8 +264,15 @@ void WeaponSystem::handleRegularMobShooting(ECS &ecs, float deltaTime)
         EntityID projectileEntity = createProjectile(ecs, transform->x, transform->y,
                                                      dirX, dirY, *weapon, mobEntityID, 300.0f, false);
 
-        // Update weapon state
-        weapon->fireTimer = 1.0f / weapon->fireRate;
+        // Update weapon state - use different fire rates for dual/multiplayer
+        if (gameManager.isDualPlayer())
+        {
+            weapon->fireTimer = 1.0f; // 1 second between shots in dual/multiplayer (faster shooting)
+        }
+        else
+        {
+            weapon->fireTimer = 1.0f / weapon->fireRate; // Original fire rate for single player
+        }
         weapon->canFire = false;
 
         std::cout << "Regular mob fired at player! Distance: " << distance << std::endl;

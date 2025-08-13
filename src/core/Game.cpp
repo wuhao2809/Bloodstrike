@@ -246,7 +246,14 @@ void Game::gameLoop()
     networkSystem->update(ecs, gameManager, deltaTime);
 
     // 3. Handle input
-    inputSystem->update(ecs, gameManager, deltaTime);
+    if (gameManager.isMultiplayer())
+    {
+        inputSystem->update(ecs, gameManager, networkSystem.get(), deltaTime);
+    }
+    else
+    {
+        inputSystem->update(ecs, gameManager, deltaTime);
+    }
 
     // 3.5. Check if player state needs to be reset (after game restart)
     if (gameManager.needsPlayerReset)

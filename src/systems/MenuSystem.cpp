@@ -18,6 +18,32 @@ void MenuSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
     // Handle menu when in menu state
     if (gameManager.currentState == GameManager::MENU)
     {
+        // Check for network state transitions when in lobby
+        if (currentMenuState == MenuState::LOBBY_WAITING && networkSystem)
+        {
+            NetworkState netState = networkSystem->getState();
+
+            // Debug: Print current network state
+            std::cout << "Current network state: " << static_cast<int>(netState) << std::endl;
+
+            // If we're connected to lobby or fully connected, both players are ready to start
+            if (netState == NetworkState::LOBBY || netState == NetworkState::CONNECTED)
+            {
+                std::cout << "Players connected! Starting networked multiplayer..." << std::endl;
+
+                // Start networked multiplayer game
+                gameManager.startNetworkedMultiplayerGame();
+
+                // Clean up menu entities as we're transitioning to game
+                if (menuEntitiesCreated)
+                {
+                    cleanupMenuEntities(ecs);
+                    menuEntitiesCreated = false;
+                }
+                return;
+            }
+        }
+
         // Create menu entities if they don't exist
         if (!menuEntitiesCreated)
         {

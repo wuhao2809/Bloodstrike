@@ -28,8 +28,8 @@ public:
 
     // Level system
     int currentLevel = 1;
-    float levelTime = 0.0f;           // Time spent in current level
-    const float levelDuration = 5.0f; // 10 seconds per level
+    float levelTime = 0.0f;     // Time spent in current level
+    float levelDuration = 5.0f; // 5 seconds per level (default, can be modified for multiplayer)
     const int maxLevel = 4;
 
     // Screen bounds
@@ -72,8 +72,23 @@ public:
         accumulatedScore = 0.0f;
         currentLevel = 1;
         levelTime = 0.0f;
+        levelDuration = 90.0f; // 90 seconds for dual player
         needsPlayerReset = true; // Request player state reset
-        std::cout << "Starting Dual Player Mode - Player vs Mob King!" << std::endl;
+        std::cout << "Starting Dual Player Mode - 90s battle!" << std::endl;
+    }
+
+    void startNetworkedMultiplayerGame()
+    {
+        currentState = PLAYING;
+        currentGameMode = MULTIPLAYER_ONLINE;
+        score = 0;
+        gameTime = 0.0f;
+        accumulatedScore = 0.0f;
+        currentLevel = 1;
+        levelTime = 0.0f;
+        levelDuration = 90.0f; // 90 seconds for multiplayer
+        needsPlayerReset = true; // Request player state reset
+        std::cout << "Starting Networked Multiplayer Mode - 90s battle!" << std::endl;
     }
 
     void gameOver()
@@ -100,20 +115,34 @@ public:
             gameTime += deltaTime;
             levelTime += deltaTime;
 
-            // Check if level is complete (10 seconds)
-            if (levelTime >= levelDuration)
+            // Special handling for dual player and multiplayer modes
+            if (currentGameMode == DUAL_PLAYER_LOCAL || currentGameMode == MULTIPLAYER_ONLINE)
             {
-                if (currentLevel < maxLevel)
+                // Dual/Multiplayer: 120-second countdown, game ends when time is up
+                if (levelTime >= levelDuration)
                 {
-                    // Show level complete screen
-                    currentState = LEVEL_COMPLETE;
-                    std::cout << "Level " << currentLevel << " Complete! Press SPACE to continue or R to restart" << std::endl;
-                }
-                else
-                {
-                    // Completed all levels - victory!
-                    std::cout << "Congratulations! You completed all levels!" << std::endl;
+                    std::cout << "Time up! Game Over!" << std::endl;
                     gameOver();
+                    return;
+                }
+            }
+            else
+            {
+                // Original single/dual player logic
+                if (levelTime >= levelDuration)
+                {
+                    if (currentLevel < maxLevel)
+                    {
+                        // Show level complete screen
+                        currentState = LEVEL_COMPLETE;
+                        std::cout << "Level " << currentLevel << " Complete! Press SPACE to continue or R to restart" << std::endl;
+                    }
+                    else
+                    {
+                        // Completed all levels - victory!
+                        std::cout << "Congratulations! You completed all levels!" << std::endl;
+                        gameOver();
+                    }
                 }
             }
 
@@ -156,6 +185,13 @@ public:
     // Get level-specific mob speed multiplier
     float getLevelSpeedMultiplier() const
     {
+        if (isDualPlayer())
+        {
+            // Use dynamic speed multiplier for dual/multiplayer modes
+            return getMobSpeedMultiplier();
+        }
+
+        // Original level-based system for single player
         switch (currentLevel)
         {
         case 1:
@@ -174,6 +210,11 @@ public:
     // Check if mobs can shoot in current level
     bool canMobsShoot() const
     {
+        if (currentGameMode == DUAL_PLAYER_LOCAL || currentGameMode == MULTIPLAYER_ONLINE)
+        {
+            // Dual/Multiplayer: mobs can shoot in last 15 seconds
+            return (levelDuration - levelTime) <= 15.0f;
+        }
         return currentLevel >= 4;
     }
 
@@ -185,13 +226,18 @@ public:
 
     // Game mode helpers
     bool isSinglePlayer() const { return currentGameMode == SINGLE_PLAYER; }
-    bool isDualPlayer() const { return currentGameMode == DUAL_PLAYER_LOCAL; }
+    bool isDualPlayer() const { return currentGameMode == DUAL_PLAYER_LOCAL || currentGameMode == MULTIPLAYER_ONLINE; }
     bool isMultiplayer() const { return currentGameMode == MULTIPLAYER_ONLINE; }
 
     // Dual player specific settings
     bool shouldSpawnMobKing() const
     {
-        return isDualPlayer() && currentLevel >= 2; // Mob King appears from level 2 in dual player
+        if (currentGameMode == DUAL_PLAYER_LOCAL || currentGameMode == MULTIPLAYER_ONLINE)
+        {
+            // Dual/Multiplayer: Mob King spawns immediately
+            return true;
+        }
+        return false; // No Mob King in single player mode
     }
 
     // Get mob spawn settings based on game mode
@@ -199,9 +245,37 @@ public:
     {
         if (isDualPlayer())
         {
-            // Dual player: fewer regular mobs since we have Mob King
-            return getLevelSpawnInterval() * 2.0f;
+            // Dual/Multiplayer: dynamic spawn interval that gets faster over time
+            return getDynamicSpawnInterval();
         }
         return getLevelSpawnInterval();
+    }
+
+    // Get dynamic spawn interval for dual/multiplayer modes
+    float getDynamicSpawnInterval() const
+    {
+        if (isDualPlayer())
+        {
+            // Spawn interval decreases from 1.0s to 0.2s over 90 seconds
+            float progress = levelTime / levelDuration; // 0.0 to 1.0
+            float startInterval = 1.0f;                 // Start: 1 second between spawns
+            float endInterval = 0.2f;                   // End: 0.2 seconds between spawns (very fast)
+            return startInterval - (progress * (startInterval - endInterval));
+        }
+        return 0.5f; // Default interval for single player
+    }
+
+    // Get dynamic mob speed multiplier for dual/multiplayer modes
+    float getMobSpeedMultiplier() const
+    {
+        if (isDualPlayer())
+        {
+            // Speed increases from 1.0x to 2.0x over 90 seconds
+            float progress = levelTime / levelDuration; // 0.0 to 1.0
+            float startSpeed = 1.0f;                    // Start: normal speed
+            float endSpeed = 2.0f;                      // End: double speed
+            return startSpeed + (progress * (endSpeed - startSpeed));
+        }
+        return 1.0f; // Normal speed for single player
     }
 };

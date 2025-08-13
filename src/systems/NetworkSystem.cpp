@@ -154,8 +154,9 @@ bool NetworkSystem::joinGame(const std::string &serverIP, uint16_t serverPort)
     NetworkMessage connectMsg(MessageType::CONNECTION_REQUEST, localPlayerID);
     sendMessage(connectMsg);
 
-    currentState = NetworkState::CLIENT_JOINING;
+    currentState = NetworkState::LOBBY; // Directly go to LOBBY instead of CLIENT_JOINING
     std::cout << "Connecting to " << hostIP << ":" << port << "..." << std::endl;
+    std::cout << "Client: Successfully connected, transitioning to LOBBY state" << std::endl;
     return true;
 }
 
@@ -289,6 +290,8 @@ void NetworkSystem::processIncomingMessages(ECS &ecs, GameManager &gameManager)
     {
         NetworkMessage message = popIncomingMessage();
 
+        std::cout << "Processing message type: " << static_cast<int>(message.type) << " from player " << message.playerID << std::endl;
+
         switch (message.type)
         {
         case MessageType::CONNECTION_REQUEST:
@@ -302,6 +305,7 @@ void NetworkSystem::processIncomingMessages(ECS &ecs, GameManager &gameManager)
                 sendMessage(acceptMsg);
 
                 currentState = NetworkState::LOBBY;
+                std::cout << "Host: Connection accepted, transitioning to LOBBY state" << std::endl;
             }
             break;
 
@@ -312,6 +316,7 @@ void NetworkSystem::processIncomingMessages(ECS &ecs, GameManager &gameManager)
                 remoteConnection.playerID = message.playerID;
                 remoteConnection.isConnected = true;
                 currentState = NetworkState::LOBBY;
+                std::cout << "Client: Connection accepted, transitioning to LOBBY state" << std::endl;
             }
             break;
 
@@ -330,6 +335,16 @@ void NetworkSystem::processIncomingMessages(ECS &ecs, GameManager &gameManager)
 
         case MessageType::PONG:
             remoteConnection.lastPingTime = SDL_GetTicks();
+            break;
+
+        case MessageType::PLAYER_INPUT:
+            std::cout << "Received PLAYER_INPUT message" << std::endl;
+            // Handle player input (this will be processed by InputSystem)
+            break;
+
+        case MessageType::MOB_KING_INPUT:
+            std::cout << "Received MOB_KING_INPUT message" << std::endl;
+            // Handle mob king input (this will be processed by InputSystem)
             break;
 
         default:
@@ -436,4 +451,42 @@ bool NetworkSystem::deserializeMessage(const uint8_t *buffer, size_t bufferSize,
 uint32_t NetworkSystem::generatePlayerID()
 {
     return SDL_GetTicks() + (rand() % 1000);
+}
+
+void NetworkSystem::sendPlayerInput(float velocityX, float velocityY, int mouseX, int mouseY, bool shooting)
+{
+    if (currentState != NetworkState::LOBBY && currentState != NetworkState::CONNECTED)
+        return;
+
+    PlayerInputData inputData;
+    inputData.velocityX = velocityX;
+    inputData.velocityY = velocityY;
+    inputData.mouseX = mouseX;
+    inputData.mouseY = mouseY;
+    inputData.shooting = shooting;
+    inputData.timestamp = SDL_GetTicks();
+
+    NetworkMessage message(MessageType::PLAYER_INPUT, localPlayerID);
+    message.dataSize = sizeof(PlayerInputData);
+    memcpy(message.data, &inputData, sizeof(PlayerInputData));
+
+    sendMessage(message);
+}
+
+void NetworkSystem::sendMobKingInput(float velocityX, float velocityY, bool shooting)
+{
+    if (currentState != NetworkState::LOBBY && currentState != NetworkState::CONNECTED)
+        return;
+
+    MobKingInputData inputData;
+    inputData.velocityX = velocityX;
+    inputData.velocityY = velocityY;
+    inputData.shooting = shooting;
+    inputData.timestamp = SDL_GetTicks();
+
+    NetworkMessage message(MessageType::MOB_KING_INPUT, localPlayerID);
+    message.dataSize = sizeof(MobKingInputData);
+    memcpy(message.data, &inputData, sizeof(MobKingInputData));
+
+    sendMessage(message);
 }

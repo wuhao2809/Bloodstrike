@@ -3,6 +3,9 @@
 #include "../managers/GameManager.h"
 #include <SDL2/SDL.h>
 
+// Forward declaration
+class NetworkSystem;
+
 class InputSystem : public System
 {
 private:
@@ -13,4 +16,5 @@ private:
 public:
     InputSystem();
     void update(ECS &ecs, GameManager &gameManager, float deltaTime) override;
+    void update(ECS &ecs, GameManager &gameManager, NetworkSystem *networkSystem, float deltaTime);
 };

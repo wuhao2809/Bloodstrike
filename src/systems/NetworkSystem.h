@@ -48,6 +48,22 @@ struct NetworkMessage
     NetworkMessage(MessageType t, uint32_t id) : type(t), playerID(id), timestamp(SDL_GetTicks()), dataSize(0) {}
 };
 
+// Input message structures
+struct PlayerInputData
+{
+    float velocityX, velocityY;
+    int mouseX, mouseY;
+    bool shooting;
+    uint32_t timestamp;
+};
+
+struct MobKingInputData
+{
+    float velocityX, velocityY;
+    bool shooting;
+    uint32_t timestamp;
+};
+
 struct ConnectionInfo
 {
     TCPsocket socket;
@@ -100,6 +116,10 @@ public:
     bool receiveMessages();
     NetworkMessage popIncomingMessage();
     bool hasIncomingMessages() const;
+
+    // Input synchronization
+    void sendPlayerInput(float velocityX, float velocityY, int mouseX, int mouseY, bool shooting);
+    void sendMobKingInput(float velocityX, float velocityY, bool shooting);
 
     // State queries
     NetworkState getState() const { return currentState; }

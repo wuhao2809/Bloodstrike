@@ -151,19 +151,8 @@ void MobSpawningSystem::spawnMob(ECS &ecs, GameManager &gameManager)
     speedComponent.value = finalSpeed;
     ecs.addComponent(mobEntity, speedComponent);
 
-    // In dual player mode, only Mob King can shoot (not regular mobs)
-    // In single player mode, mobs can shoot at level 4
-    bool shouldHaveWeapon = false;
-    if (gameManager.isDualPlayer())
-    {
-        // In dual player mode, regular mobs don't get weapons (only Mob King does)
-        shouldHaveWeapon = false;
-    }
-    else
-    {
-        // In single player mode, mobs can shoot at level 4
-        shouldHaveWeapon = gameManager.canMobsShoot();
-    }
+    // Regular mobs can shoot based on game mode and conditions
+    bool shouldHaveWeapon = gameManager.canMobsShoot();
 
     // Add weapon component if conditions are met
     if (shouldHaveWeapon)
@@ -182,15 +171,16 @@ void MobSpawningSystem::spawnMob(ECS &ecs, GameManager &gameManager)
         weapon.maxAmmo = 999;
         ecs.addComponent(mobEntity, weapon);
 
-        std::cout << "Spawned " << mobType << " mob with weapon at (" << spawnX << ", " << spawnY
+        std::cout << "Spawned " << mobType << " mob WITH WEAPON at (" << spawnX << ", " << spawnY
                   << ") with speed " << finalSpeed << " (base: " << baseSpeed
-                  << ", multiplier: " << levelSpeedMultiplier << ")" << std::endl;
+                  << ", multiplier: " << levelSpeedMultiplier << ") - CAN SHOOT!" << std::endl;
     }
     else
     {
         std::cout << "Spawned " << mobType << " mob at (" << spawnX << ", " << spawnY
                   << ") with speed " << finalSpeed << " (base: " << baseSpeed
-                  << ", multiplier: " << levelSpeedMultiplier << ")" << std::endl;
+                  << ", multiplier: " << levelSpeedMultiplier << ") - spawn interval: " 
+                  << gameManager.getGameModeSpawnInterval() << "s" << std::endl;
     }
 }
 
