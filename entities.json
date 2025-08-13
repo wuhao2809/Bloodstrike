@@ -121,6 +121,23 @@
     "projectileSpeed": 300.0
   },
   "ui": {
+    "mobKingHealth": {
+      "position": { "x": 280, "y": 10 },
+      "text": {
+        "format": "Mob King: {current}/{max}",
+        "font": "fonts/Xolonium-Regular.ttf",
+        "fontSize": 20
+      },
+      "colors": {
+        "healthy": { "r": 255, "g": 255, "b": 255, "a": 255 },
+        "warning": { "r": 255, "g": 255, "b": 0, "a": 255 },
+        "critical": { "r": 255, "g": 0, "b": 0, "a": 255 }
+      },
+      "thresholds": {
+        "warning": 0.6,
+        "critical": 0.3
+      }
+    },
     "scoreDisplay": {
       "position": { "x": 10, "y": 10 },
       "text": "Score: 0",

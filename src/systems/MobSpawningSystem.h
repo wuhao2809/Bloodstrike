@@ -35,7 +35,6 @@ public:
 private:
     void spawnMob(ECS &ecs, GameManager &gameManager);
     void spawnMobKing(ECS &ecs, GameManager &gameManager);
-    void createMobKingHealthUI(ECS &ecs, EntityID mobKingEntity, const Health &health);
     void setSpawnInterval(float interval) { spawnInterval = interval; }
 
     // Dual player state

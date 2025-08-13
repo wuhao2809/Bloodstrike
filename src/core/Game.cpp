@@ -112,6 +112,9 @@ bool Game::initialize()
 
     // Initialize Bloodstrike 2D networking systems
     networkSystem = std::make_unique<NetworkSystem>();
+    
+    // Initialize Bloodstrike 2D UI systems
+    healthUISystem = std::make_unique<HealthUISystem>(entityFactory.get());
 
     // Connect MenuSystem with NetworkSystem
     menuSystem->setNetworkSystem(networkSystem.get());
@@ -282,6 +285,9 @@ void Game::gameLoop()
         mobSpawningSystem->update(ecs, gameManager, deltaTime);
         collisionSystem->update(ecs, gameManager, deltaTime);
         boundarySystem->update(ecs, gameManager, deltaTime);
+        
+        // UI systems (update after collision/damage systems)
+        healthUISystem->update(ecs, gameManager, deltaTime);
     }
 
     // 5. Update UI (update text content)

@@ -277,29 +277,4 @@ void MobSpawningSystem::spawnMobKing(ECS &ecs, GameManager &gameManager)
               << ") with " << health.currentHealth << "/" << health.maxHealth << " health and combat abilities!" << std::endl;
     std::cout << "Mob King stats: Damage=" << weapon.damage << ", Range=" << weapon.range
               << ", Fire Rate=" << weapon.fireRate << std::endl;
-
-    // Create health UI for Mob King
-    createMobKingHealthUI(ecs, mobKingEntity, health);
-}
-
-void MobSpawningSystem::createMobKingHealthUI(ECS &ecs, EntityID mobKingEntity, const Health &health)
-{
-    // Create health UI entity
-    EntityID healthUIEntity = ecs.createEntity();
-
-    // Position in top-right corner (adjust based on screen size)
-    // Screen width is typically 480, so position at x=280 (right side with some margin)
-    UIPosition uiPos(280.0f, 10.0f); // Top-right corner with 10px margin
-    ecs.addComponent(healthUIEntity, uiPos);
-
-    // Create health text
-    std::string healthText = "Mob King: " + std::to_string((int)health.currentHealth) + "/" + std::to_string((int)health.maxHealth);
-    UIText uiText(healthText, "fonts/Xolonium-Regular.ttf", 20, {255, 255, 255, 255}, true);
-    ecs.addComponent(healthUIEntity, uiText);
-
-    // Add component to track which Mob King this UI belongs to
-    MobKingHealthUI healthUITracker(mobKingEntity);
-    ecs.addComponent(healthUIEntity, healthUITracker);
-
-    std::cout << "Created Mob King health UI: " << healthText << std::endl;
 }

@@ -45,6 +45,9 @@ private:
 
     // Bloodstrike 2D Networking Systems
     std::unique_ptr<NetworkSystem> networkSystem;
+    
+    // Bloodstrike 2D UI Systems
+    std::unique_ptr<HealthUISystem> healthUISystem;
 
     // TODO: Systems to be implemented in Phase 4
     // std::unique_ptr<HudSystem> hudSystem;

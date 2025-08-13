@@ -14,6 +14,7 @@
 #include "AimingSystem.h"
 #include "WeaponSystem.h"
 #include "ProjectileSystem.h"
+#include "HealthUISystem.h"
 #include "MenuSystem.h"
 #include "NetworkSystem.h"
 

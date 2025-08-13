@@ -114,12 +114,6 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameMan
                         std::cout << "Player projectile hit mob! Damage: " << projectile->damage
                                   << ", Health remaining: " << mobHealth->currentHealth << std::endl;
 
-                        // Update health UI if this is the Mob King
-                        if (ecs.getComponent<MobKing>(mobID))
-                        {
-                            updateMobKingHealthUI(ecs, mobID, *mobHealth);
-                        }
-
                         // Remove the mob if health drops to 0 or below
                         if (mobHealth->currentHealth <= 0)
                         {
@@ -127,8 +121,6 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameMan
                             if (ecs.getComponent<MobKing>(mobID))
                             {
                                 std::cout << "Mob King defeated! Victory!" << std::endl;
-                                // Remove the health UI when Mob King is defeated
-                                removeMobKingHealthUI(ecs, mobID);
                             }
                             ecs.removeEntity(mobID);
                         }
@@ -197,63 +189,4 @@ bool ProjectileSystem::checkProjectileCollision(const Transform &projTransform, 
     // Check if rectangles overlap
     return (projRight > targetLeft && projLeft < targetRight &&
             projBottom > targetTop && projTop < targetBottom);
-}
-
-void ProjectileSystem::updateMobKingHealthUI(ECS &ecs, EntityID mobKingEntity, const Health &health)
-{
-    // Find the health UI entity for this Mob King
-    auto &healthUIComponents = ecs.getComponents<MobKingHealthUI>();
-    
-    for (auto &[uiEntityID, healthUI] : healthUIComponents)
-    {
-        if (healthUI.mobKingEntity == mobKingEntity)
-        {
-            // Update the UI text
-            UIText *uiText = ecs.getComponent<UIText>(uiEntityID);
-            if (uiText)
-            {
-                std::string healthText = "Mob King: " + std::to_string((int)health.currentHealth) + "/" + std::to_string((int)health.maxHealth);
-                uiText->content = healthText;
-                
-                // Change color based on health percentage
-                float healthPercent = health.currentHealth / health.maxHealth;
-                if (healthPercent > 0.6f)
-                {
-                    uiText->color = {255, 255, 255, 255}; // White
-                }
-                else if (healthPercent > 0.3f)
-                {
-                    uiText->color = {255, 255, 0, 255}; // Yellow
-                }
-                else
-                {
-                    uiText->color = {255, 0, 0, 255}; // Red
-                }
-                
-                std::cout << "Updated Mob King health UI: " << healthText << std::endl;
-            }
-            break;
-        }
-    }
-}
-
-void ProjectileSystem::removeMobKingHealthUI(ECS &ecs, EntityID mobKingEntity)
-{
-    // Find and remove the health UI entity for this Mob King
-    auto &healthUIComponents = ecs.getComponents<MobKingHealthUI>();
-    std::vector<EntityID> uiToRemove;
-    
-    for (auto &[uiEntityID, healthUI] : healthUIComponents)
-    {
-        if (healthUI.mobKingEntity == mobKingEntity)
-        {
-            uiToRemove.push_back(uiEntityID);
-        }
-    }
-    
-    for (EntityID uiEntityID : uiToRemove)
-    {
-        ecs.removeEntity(uiEntityID);
-        std::cout << "Removed Mob King health UI" << std::endl;
-    }
 }
