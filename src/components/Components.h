@@ -85,6 +85,13 @@ struct UIPosition
     UIPosition(float x = 0, float y = 0) : x(x), y(y) {}
 };
 
+struct MobKingHealthUI
+{
+    EntityID mobKingEntity; // Reference to the Mob King entity
+    
+    MobKingHealthUI(EntityID mobKing = 0) : mobKingEntity(mobKing) {}
+};
+
 // Tag Components (Empty structs for identification)
 struct PlayerTag
 {

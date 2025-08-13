@@ -409,6 +409,18 @@ void Game::resetPlayerState()
         ecs.removeEntity(projectileID);
     }
 
+    // Clear Mob King health UI
+    auto &healthUIComponents = ecs.getComponents<MobKingHealthUI>();
+    std::vector<EntityID> healthUIToRemove;
+    for (auto &[uiEntityID, healthUI] : healthUIComponents)
+    {
+        healthUIToRemove.push_back(uiEntityID);
+    }
+    for (EntityID uiID : healthUIToRemove)
+    {
+        ecs.removeEntity(uiID);
+    }
+
     // Reset player's weapon ammo when game restarts
     auto &playerTags = ecs.getComponents<PlayerTag>();
     for (auto &[playerEntityID, playerTag] : playerTags)

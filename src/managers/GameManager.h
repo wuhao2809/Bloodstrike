@@ -72,7 +72,7 @@ public:
         accumulatedScore = 0.0f;
         currentLevel = 1;
         levelTime = 0.0f;
-        levelDuration = 20.0f;   // 90 seconds for dual player
+        levelDuration = 90.0f; // 90 seconds for dual player
         needsPlayerReset = true; // Request player state reset
         std::cout << "Starting Dual Player Mode - 90s battle!" << std::endl;
     }

@@ -17,6 +17,8 @@ private:
     void checkProjectileLifetime(ECS &ecs, float deltaTime);
     void handleProjectileCollisions(ECS &ecs, GameManager &gameManager);
     void removeProjectile(ECS &ecs, EntityID entityID);
+    void updateMobKingHealthUI(ECS &ecs, EntityID mobKingEntity, const Health &health);
+    void removeMobKingHealthUI(ECS &ecs, EntityID mobKingEntity);
     bool checkProjectileCollision(const Transform &projTransform, const Collider &projCollider,
                                   const Transform &targetTransform, const Collider &targetCollider);
 };
