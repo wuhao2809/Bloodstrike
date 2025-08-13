@@ -5,10 +5,14 @@
 #include "../managers/EntityFactory.h"
 #include <random>
 
+// Forward declaration to avoid circular dependency
+class NetworkSystem;
+
 class MobSpawningSystem : public System
 {
 private:
     EntityFactory *entityFactory;
+    NetworkSystem *networkSystem = nullptr; // Optional network integration
     float timeSinceLastSpawn;
     float spawnInterval;
     std::mt19937 randomGenerator;
@@ -31,6 +35,12 @@ public:
         mobKingSpawned = false;
         timeSinceLastSpawn = 0.0f;
     }
+
+    // Network integration
+    void setNetworkSystem(NetworkSystem *network) { networkSystem = network; }
+
+    // Create mob from network data (for Client synchronization)
+    EntityID createMobFromNetwork(ECS &ecs, uint32_t mobID, float x, float y, float velocityX, float velocityY, const std::string &mobType);
 
 private:
     void spawnMob(ECS &ecs, GameManager &gameManager);

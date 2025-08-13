@@ -1,6 +1,9 @@
 #pragma once
 #include <iostream>
 
+// Forward declare GameSettings to avoid circular dependency
+class GameSettings;
+
 class GameManager
 {
 public:
@@ -63,33 +66,9 @@ public:
         needsPlayerReset = true; // Request player state reset
     }
 
-    void startDualPlayerGame()
-    {
-        currentState = PLAYING;
-        currentGameMode = DUAL_PLAYER_LOCAL;
-        score = 0;
-        gameTime = 0.0f;
-        accumulatedScore = 0.0f;
-        currentLevel = 1;
-        levelTime = 0.0f;
-        levelDuration = 90.0f; // 90 seconds for dual player
-        needsPlayerReset = true; // Request player state reset
-        std::cout << "Starting Dual Player Mode - 90s battle!" << std::endl;
-    }
+    void startDualPlayerGame();
 
-    void startNetworkedMultiplayerGame()
-    {
-        currentState = PLAYING;
-        currentGameMode = MULTIPLAYER_ONLINE;
-        score = 0;
-        gameTime = 0.0f;
-        accumulatedScore = 0.0f;
-        currentLevel = 1;
-        levelTime = 0.0f;
-        levelDuration = 90.0f;   // 90 seconds for multiplayer
-        needsPlayerReset = true; // Request player state reset
-        std::cout << "Starting Networked Multiplayer Mode - 90s battle!" << std::endl;
-    }
+    void startNetworkedMultiplayerGame();
 
     void gameOver()
     {
@@ -165,22 +144,7 @@ public:
     }
 
     // Get level-specific mob spawn interval
-    float getLevelSpawnInterval() const
-    {
-        switch (currentLevel)
-        {
-        case 1:
-            return 1.0f; // Level 1: Slower spawning (tutorial)
-        case 2:
-            return 0.4f; // Level 2: Faster spawning
-        case 3:
-            return 0.4f; // Level 3: Same as level 2
-        case 4:
-            return 0.3f; // Level 4: Very fast spawning + shooting mobs
-        default:
-            return 0.5f;
-        }
-    }
+    float getLevelSpawnInterval() const;
 
     // Get level-specific mob speed multiplier
     float getLevelSpeedMultiplier() const
@@ -208,15 +172,7 @@ public:
     }
 
     // Check if mobs can shoot in current level
-    bool canMobsShoot() const
-    {
-        if (currentGameMode == DUAL_PLAYER_LOCAL || currentGameMode == MULTIPLAYER_ONLINE)
-        {
-            // Dual/Multiplayer: mobs can shoot in last 15 seconds
-            return (levelDuration - levelTime) <= 15.0f;
-        }
-        return currentLevel >= 4;
-    }
+    bool canMobsShoot() const;
 
     // Get remaining time in current level
     float getLevelTimeRemaining() const
@@ -252,30 +208,8 @@ public:
     }
 
     // Get dynamic spawn interval for dual/multiplayer modes
-    float getDynamicSpawnInterval() const
-    {
-        if (isDualPlayer())
-        {
-            // Spawn interval decreases from 1.0s to 0.2s over 90 seconds
-            float progress = levelTime / levelDuration; // 0.0 to 1.0
-            float startInterval = 1.0f;                 // Start: 1 second between spawns
-            float endInterval = 0.2f;                   // End: 0.2 seconds between spawns (very fast)
-            return startInterval - (progress * (startInterval - endInterval));
-        }
-        return 0.5f; // Default interval for single player
-    }
+    float getDynamicSpawnInterval() const;
 
     // Get dynamic mob speed multiplier for dual/multiplayer modes
-    float getMobSpeedMultiplier() const
-    {
-        if (isDualPlayer())
-        {
-            // Speed increases from 1.0x to 2.0x over 90 seconds
-            float progress = levelTime / levelDuration; // 0.0 to 1.0
-            float startSpeed = 1.0f;                    // Start: normal speed
-            float endSpeed = 2.0f;                      // End: double speed
-            return startSpeed + (progress * (endSpeed - startSpeed));
-        }
-        return 1.0f; // Normal speed for single player
-    }
+    float getMobSpeedMultiplier() const;
 };

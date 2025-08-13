@@ -290,9 +290,10 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, NetworkSystem *netw
     {
         bool isHost = networkSystem->isHosting();
 
-        // Process local input and send to remote
+        // STEP 1: Only Host processes input, Client does nothing
         if (isHost)
         {
+            // Process local input and send to remote
             // Host controls Player (WASD + mouse) locally and sends to client
             auto &playerEntities = ecs.getComponents<PlayerTag>();
             for (auto &[entityID, playerTag] : playerEntities)
@@ -338,6 +339,23 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, NetworkSystem *netw
                 velocity->x = velX;
                 velocity->y = velY;
 
+                // Send position update to client (throttled to ~30 FPS for performance)
+                auto *transform = ecs.getComponent<Transform>(entityID);
+                if (transform && networkSystem)
+                {
+                    static float positionUpdateTimer = 0.0f;
+                    positionUpdateTimer += deltaTime;
+
+                    // Send position updates at ~30 FPS (every 0.033 seconds)
+                    if (positionUpdateTimer >= 0.033f)
+                    {
+                        networkSystem->sendEntityPositionUpdate(entityID, transform->x, transform->y,
+                                                                velocity->x, velocity->y, "player");
+                        std::cout << "[HOST] Sending player position: (" << transform->x << ", " << transform->y << ") @ 30 FPS" << std::endl;
+                        positionUpdateTimer = 0.0f;
+                    }
+                }
+
                 // Set movement direction for sprite
                 if (movementDir && (movingHorizontal || movingVertical))
                 {
@@ -349,57 +367,20 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, NetworkSystem *netw
                         movementDir->direction = MovementDirection::HORIZONTAL;
                 }
 
-                // Get mouse state and send over network
+                // Get mouse state for shooting (handled by WeaponSystem)
                 int mouseX, mouseY;
                 Uint32 mouseButtons = SDL_GetMouseState(&mouseX, &mouseY);
                 bool shooting = (mouseButtons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
 
-                // Send input to client
-                networkSystem->sendPlayerInput(velX, velY, mouseX, mouseY, shooting);
+                // Mouse state is handled locally by WeaponSystem
+                // Position sync is handled by sendEntityPositionUpdate above
                 break;
             }
         }
         else
         {
-            // Client controls Mob King (IJKL + P) locally and sends to host
-            auto &mobKingEntities = ecs.getComponents<MobKing>();
-            for (auto &[entityID, mobKing] : mobKingEntities)
-            {
-                auto *velocity = ecs.getComponent<Velocity>(entityID);
-                if (!velocity)
-                    continue;
-
-                float velX = 0.0f, velY = 0.0f;
-                bool shooting = false;
-
-                // Process IJKL input locally
-                if (keyboardState[SDL_SCANCODE_I])
-                    velY = -1.0f;
-                if (keyboardState[SDL_SCANCODE_K])
-                    velY = 1.0f;
-                if (keyboardState[SDL_SCANCODE_J])
-                    velX = -1.0f;
-                if (keyboardState[SDL_SCANCODE_L])
-                    velX = 1.0f;
-
-                // P for shooting
-                shooting = keyboardState[SDL_SCANCODE_P];
-
-                // Normalize diagonal movement
-                if (velX != 0 && velY != 0)
-                {
-                    velX *= 0.707f;
-                    velY *= 0.707f;
-                }
-
-                // Apply locally
-                velocity->x = velX;
-                velocity->y = velY;
-
-                // Send input to host
-                networkSystem->sendMobKingInput(velX, velY, shooting);
-                break;
-            }
+            // STEP 1: Client does NO input processing - just receives updates
+            // (No debug output to avoid spam)
         }
 
         // Process incoming network messages
@@ -407,27 +388,10 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, NetworkSystem *netw
         {
             auto message = networkSystem->popIncomingMessage();
 
-            if (message.type == MessageType::PLAYER_INPUT && !isHost)
-            {
-                // Client receives player input from host
-                PlayerInputData inputData;
-                memcpy(&inputData, message.data, sizeof(PlayerInputData));
+            // PLAYER_INPUT message removed - using ENTITY_POSITION_UPDATE instead
+            // Client now receives position updates via MovementSystem::updateEntityFromNetwork()
 
-                // Apply to local player entity
-                auto &playerEntities = ecs.getComponents<PlayerTag>();
-                for (auto &[entityID, playerTag] : playerEntities)
-                {
-                    auto *velocity = ecs.getComponent<Velocity>(entityID);
-                    if (velocity)
-                    {
-                        velocity->x = inputData.velocityX;
-                        velocity->y = inputData.velocityY;
-                    }
-                    // TODO: Handle mouse position and shooting
-                    break;
-                }
-            }
-            else if (message.type == MessageType::MOB_KING_INPUT && isHost)
+            if (message.type == MessageType::MOB_KING_INPUT && isHost)
             {
                 // Host receives mob king input from client
                 MobKingInputData inputData;

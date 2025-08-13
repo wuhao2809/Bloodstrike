@@ -2,6 +2,7 @@
 #include "../systems/Systems.h"
 #include "../managers/ResourceManager.h"
 #include "../managers/EntityFactory.h"
+#include "../managers/GameSettings.h"
 #include <iostream>
 
 Game::Game()
@@ -44,12 +45,18 @@ bool Game::initialize()
         return false;
     }
 
-    // Load game settings from JSON BEFORE creating window
-    json gameSettings = entityFactory->getGameSettings();
-    gameManager.screenWidth = gameSettings["screenSize"]["width"].get<float>();
-    gameManager.screenHeight = gameSettings["screenSize"]["height"].get<float>();
-    gameManager.mobSpawnInterval = gameSettings["mobSpawnInterval"].get<float>();
-    gameManager.scorePerSecond = gameSettings["scorePerSecond"].get<float>();
+    // Load game settings from GameSettings singleton
+    GameSettings &gameSettings = GameSettings::getInstance();
+    if (!gameSettings.loadSettings("gameSettings.json"))
+    {
+        std::cerr << "Warning: Failed to load game settings, using defaults" << std::endl;
+    }
+
+    // Initialize GameManager with settings from GameSettings
+    gameManager.screenWidth = gameSettings.getScreenWidth();
+    gameManager.screenHeight = gameSettings.getScreenHeight();
+    gameManager.mobSpawnInterval = gameSettings.getSinglePlayerMobSpawnInterval();
+    gameManager.scorePerSecond = gameSettings.getSinglePlayerScorePerSecond();
 
     // NOW create window with correct size
     window = SDL_CreateWindow("Bloodstrike 2D",
@@ -112,12 +119,21 @@ bool Game::initialize()
 
     // Initialize Bloodstrike 2D networking systems
     networkSystem = std::make_unique<NetworkSystem>();
-    
+
     // Initialize Bloodstrike 2D UI systems
     healthUISystem = std::make_unique<HealthUISystem>(entityFactory.get());
 
-    // Connect MenuSystem with NetworkSystem
+    // Connect systems with NetworkSystem for multiplayer synchronization
     menuSystem->setNetworkSystem(networkSystem.get());
+    mobSpawningSystem->setNetworkSystem(networkSystem.get());
+    weaponSystem->setNetworkSystem(networkSystem.get());
+    projectileSystem->setNetworkSystem(networkSystem.get());
+
+    // Set game manager reference in NetworkSystem for game state synchronization
+    networkSystem->setGameManager(&gameManager);
+    networkSystem->setMobSpawningSystem(mobSpawningSystem.get());
+    networkSystem->setWeaponSystem(weaponSystem.get());
+    networkSystem->setMovementSystem(movementSystem.get());
 
     // Initialize audio system
     if (!audioSystem->initialize())
@@ -268,24 +284,53 @@ void Game::gameLoop()
     // 4. Update game logic (only if playing)
     if (gameManager.currentState == GameManager::PLAYING)
     {
-        // Movement and animation
+        // Movement and animation (always update for visual smoothness)
         movementSystem->update(ecs, deltaTime);
         animationSystem->update(ecs, deltaTime);
         audioSystem->update(ecs, gameManager, deltaTime);
 
-        // Update game time and score
-        gameManager.updateGameTime(deltaTime);
+        // In multiplayer, only Host runs authoritative game logic
+        // Client receives updates via network and only handles local rendering/input
+        bool shouldRunGameLogic = true;
+        if (gameManager.isMultiplayer() && networkSystem)
+        {
+            shouldRunGameLogic = networkSystem->isHosting(); // Only Host runs logic
+        }
 
-        // Combat systems
-        aimingSystem->update(ecs, gameManager, deltaTime);
-        weaponSystem->update(ecs, gameManager, deltaTime);
-        projectileSystem->update(ecs, gameManager, deltaTime);
+        if (shouldRunGameLogic)
+        {
+            // Update game time and score (Host only in multiplayer)
+            gameManager.updateGameTime(deltaTime);
 
-        // Mob and collision systems
-        mobSpawningSystem->update(ecs, gameManager, deltaTime);
-        collisionSystem->update(ecs, gameManager, deltaTime);
-        boundarySystem->update(ecs, gameManager, deltaTime);
-        
+            // Combat systems (Host only in multiplayer)
+            aimingSystem->update(ecs, gameManager, deltaTime);
+            weaponSystem->update(ecs, gameManager, deltaTime);
+            projectileSystem->update(ecs, gameManager, deltaTime);
+
+            // Mob and collision systems (Host only in multiplayer)
+            mobSpawningSystem->update(ecs, gameManager, deltaTime);
+            collisionSystem->update(ecs, gameManager, deltaTime);
+            boundarySystem->update(ecs, gameManager, deltaTime);
+        }
+        else
+        {
+            // Client: Only run essential systems for local rendering
+            // Input is handled separately via InputSystem -> NetworkSystem
+            // Game state comes from Host via network messages
+
+            // Still run aiming for local player (input will be networked)
+            aimingSystem->update(ecs, gameManager, deltaTime);
+
+            // Still run weapon system for local player input (will be networked)
+            weaponSystem->update(ecs, gameManager, deltaTime);
+
+            // Run projectile system for movement (collision detection is host-only inside update)
+            projectileSystem->update(ecs, gameManager, deltaTime);
+
+            // Still run boundary system for local entity cleanup
+            boundarySystem->update(ecs, gameManager, deltaTime);
+        }
+
         // UI systems (update after collision/damage systems)
         healthUISystem->update(ecs, gameManager, deltaTime);
     }

@@ -1,0 +1,156 @@
+{
+  "gameplay": {
+    "singlePlayer": {
+      "levelDuration": 5.0,
+      "maxLevel": 4,
+      "mobSpawnInterval": 0.5,
+      "scorePerSecond": 10.0,
+      "levelSettings": {
+        "1": {
+          "mobSpeedMultiplier": 0.8,
+          "spawnInterval": 0.8,
+          "canMobsShoot": false
+        },
+        "2": {
+          "mobSpeedMultiplier": 1.0,
+          "spawnInterval": 0.6,
+          "canMobsShoot": false
+        },
+        "3": {
+          "mobSpeedMultiplier": 1.5,
+          "spawnInterval": 0.4,
+          "canMobsShoot": false
+        },
+        "4": {
+          "mobSpeedMultiplier": 1.3,
+          "spawnInterval": 0.3,
+          "canMobsShoot": true
+        }
+      }
+    },
+    "dualPlayer": {
+      "levelDuration": 20.0,
+      "maxLevel": 1,
+      "mobSpawnInterval": {
+        "start": 1.0,
+        "end": 0.2
+      },
+      "mobSpeedMultiplier": {
+        "start": 1.0,
+        "end": 2.0
+      },
+      "mobShootingSettings": {
+        "enabledInLastSeconds": 15.0,
+        "fireRateMultiplier": 1.0
+      },
+      "scorePerSecond": 15.0,
+      "spawnBoundaryPadding": 50.0
+    },
+    "multiplayer": {
+      "levelDuration": 30.0,
+      "maxLevel": 1,
+      "mobSpawnInterval": {
+        "start": 1.0,
+        "end": 0.2
+      },
+      "mobSpeedMultiplier": {
+        "start": 1.0,
+        "end": 1.0
+      },
+      "mobShootingSettings": {
+        "enabledInLastSeconds": 5.0,
+        "fireRateMultiplier": 5.0
+      },
+      "scorePerSecond": 15.0,
+      "spawnBoundaryPadding": 50.0,
+      "networkSettings": {
+        "heartbeatIntervalMs": 2000,
+        "connectionTimeoutMs": 10000,
+        "pingIntervalMs": 1000
+      }
+    },
+    "mobKing": {
+      "health": 1000.0,
+      "damagePerBullet": 20.0,
+      "spawnImmediately": true
+    }
+  },
+  "graphics": {
+    "screenSize": {
+      "width": 1280,
+      "height": 720
+    },
+    "backgroundColor": {
+      "r": 135,
+      "g": 206,
+      "b": 235,
+      "a": 255
+    },
+    "targetFPS": 60,
+    "aimingLine": {
+      "normalColor": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 200
+      },
+      "shootingColor": {
+        "r": 255,
+        "g": 0,
+        "b": 0,
+        "a": 200
+      }
+    }
+  },
+  "audio": {
+    "settings": {
+      "frequency": 44100,
+      "format": "MIX_DEFAULT_FORMAT",
+      "channels": 2,
+      "chunkSize": 2048,
+      "musicVolume": 64,
+      "sfxVolume": 128
+    }
+  },
+  "ui": {
+    "mobKingHealth": {
+      "position": {
+        "x": 280,
+        "y": 10
+      },
+      "colors": {
+        "high": {
+          "r": 0,
+          "g": 255,
+          "b": 0
+        },
+        "medium": {
+          "r": 255,
+          "g": 255,
+          "b": 0
+        },
+        "low": {
+          "r": 255,
+          "g": 0,
+          "b": 0
+        }
+      },
+      "thresholds": {
+        "mediumHealthPercent": 50.0,
+        "lowHealthPercent": 25.0
+      },
+      "textFormat": "Mob King Health: {health}/{maxHealth}"
+    },
+    "menu": {
+      "titlePosition": {
+        "y": 150.0
+      },
+      "optionSpacing": 60.0
+    }
+  },
+  "debug": {
+    "enableLogging": true,
+    "showFPS": true,
+    "showDebugInfo": false
+  }
+}

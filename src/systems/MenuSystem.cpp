@@ -22,25 +22,97 @@ void MenuSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
         if (currentMenuState == MenuState::LOBBY_WAITING && networkSystem)
         {
             NetworkState netState = networkSystem->getState();
+            int netStateInt = static_cast<int>(netState);
 
-            // Debug: Print current network state
-            std::cout << "Current network state: " << static_cast<int>(netState) << std::endl;
+            // Debug: Print current network state only when it changes
+            if (netStateInt != lastNetworkState)
+            {
+                std::cout << "Network state changed: " << lastNetworkState
+                          << " -> " << netStateInt << std::endl;
+                lastNetworkState = netStateInt;
+            }
 
-            // If we're connected to lobby or fully connected, both players are ready to start
+            // If we're connected to lobby, move to lobby connected state
             if (netState == NetworkState::LOBBY || netState == NetworkState::CONNECTED)
             {
-                std::cout << "Players connected! Starting networked multiplayer..." << std::endl;
+                std::cout << "Connected to lobby! Waiting for players to ready up..." << std::endl;
+                currentMenuState = MenuState::LOBBY_CONNECTED;
 
-                // Start networked multiplayer game
-                gameManager.startNetworkedMultiplayerGame();
-
-                // Clean up menu entities as we're transitioning to game
+                // Clean up old menu entities and create lobby UI
                 if (menuEntitiesCreated)
                 {
                     cleanupMenuEntities(ecs);
                     menuEntitiesCreated = false;
                 }
+                createLobbyUI(ecs);
                 return;
+            }
+        }
+
+        // Handle lobby connected state - ready system
+        if ((currentMenuState == MenuState::LOBBY_CONNECTED || currentMenuState == MenuState::LOBBY_WAITING) && networkSystem)
+        {
+            // Handle ready toggle input (Space key) - use separate key tracking
+            static bool spaceKeyWasPressed = false;
+            bool spaceKeyIsPressed = keyboardState[SDL_SCANCODE_SPACE];
+
+            if (spaceKeyIsPressed && !spaceKeyWasPressed)
+            {
+                localPlayerReady = !localPlayerReady;
+                networkSystem->setPlayerReady(localPlayerReady);
+                std::cout << "Local player is now " << (localPlayerReady ? "READY" : "NOT READY") << std::endl;
+                updateLobbyUI(ecs);
+            }
+            spaceKeyWasPressed = spaceKeyIsPressed;
+
+            // Check if game should start
+            if (networkSystem->isGameStarting())
+            {
+                currentMenuState = MenuState::LOBBY_COUNTDOWN;
+                updateLobbyUI(ecs);
+            }
+            else if (networkSystem->areBothPlayersReady())
+            {
+                // Host will handle countdown automatically
+                std::cout << "Both players ready! Host starting countdown..." << std::endl;
+            }
+        }
+
+        // Handle countdown state
+        if (currentMenuState == MenuState::LOBBY_COUNTDOWN && networkSystem)
+        {
+            // Check if countdown is complete and start game
+            if (networkSystem->areBothPlayersReady())
+            {
+                // Start game after a short delay
+                static uint32_t countdownStart = 0;
+                if (countdownStart == 0)
+                {
+                    countdownStart = SDL_GetTicks();
+                }
+
+                uint32_t elapsed = SDL_GetTicks() - countdownStart;
+                if (elapsed >= 3000) // 3 second countdown
+                {
+                    std::cout << "Starting networked multiplayer game!" << std::endl;
+
+                    // Send GAME_START message to client first
+                    networkSystem->sendGameStart();
+
+                    // Start networked multiplayer game on host
+                    gameManager.startNetworkedMultiplayerGame();
+
+                    // Clean up menu entities as we're transitioning to game
+                    if (menuEntitiesCreated)
+                    {
+                        cleanupMenuEntities(ecs);
+                        menuEntitiesCreated = false;
+                    }
+
+                    // Reset countdown
+                    countdownStart = 0;
+                    return;
+                }
             }
         }
 
@@ -51,7 +123,13 @@ void MenuSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
             menuEntitiesCreated = true;
         }
 
-        handleInput(gameManager);
+        // Only handle normal menu input if not in lobby states
+        if (currentMenuState != MenuState::LOBBY_WAITING &&
+            currentMenuState != MenuState::LOBBY_CONNECTED &&
+            currentMenuState != MenuState::LOBBY_COUNTDOWN)
+        {
+            handleInput(gameManager);
+        }
         updateMenuDisplay(ecs);
     }
     else
@@ -383,4 +461,65 @@ void MenuSystem::cleanupMenuEntities(ECS &ecs)
 
     menuEntityIDs.clear();
     std::cout << "Menu entities cleaned up" << std::endl;
+}
+
+void MenuSystem::createLobbyUI(ECS &ecs)
+{
+    std::cout << "Creating lobby UI..." << std::endl;
+
+    // TODO: Create lobby-specific UI entities
+    // For now, we'll use simple text displays
+    menuOptions.clear();
+    menuActions.clear();
+
+    menuOptions.push_back("LOBBY - Press SPACE to toggle ready");
+    menuOptions.push_back("Local Player: NOT READY");
+    menuOptions.push_back("Remote Player: NOT READY");
+    menuOptions.push_back("Waiting for players...");
+
+    menuActions.push_back(""); // No action for labels
+    menuActions.push_back("");
+    menuActions.push_back("");
+    menuActions.push_back("");
+
+    createMenuEntities(ecs);
+    menuEntitiesCreated = true;
+}
+
+void MenuSystem::updateLobbyUI(ECS &ecs)
+{
+    if (!networkSystem)
+        return;
+
+    std::cout << "Updating lobby UI..." << std::endl;
+
+    // Update the text based on current ready states
+    if (menuOptions.size() >= 4)
+    {
+        menuOptions[1] = localPlayerReady ? "Local Player: READY" : "Local Player: NOT READY";
+        menuOptions[2] = networkSystem->isRemotePlayerReady() ? "Remote Player: READY" : "Remote Player: NOT READY";
+
+        if (networkSystem->isGameStarting())
+        {
+            menuOptions[3] = "Game starting in 3 seconds...";
+        }
+        else if (networkSystem->areBothPlayersReady())
+        {
+            menuOptions[3] = "Both players ready! Starting soon...";
+        }
+        else
+        {
+            menuOptions[3] = "Waiting for players to ready up...";
+        }
+    }
+
+    // Clean up and recreate entities with updated text
+    if (menuEntitiesCreated)
+    {
+        cleanupMenuEntities(ecs);
+        menuEntitiesCreated = false;
+    }
+
+    createMenuEntities(ecs);
+    menuEntitiesCreated = true;
 }

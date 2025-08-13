@@ -72,26 +72,26 @@ void HealthUISystem::updateMobKingHealthUI(ECS &ecs)
         {
             // Get UI configuration
             json uiConfig = entityFactory->getEntityConfig()["ui"]["mobKingHealth"];
-            
+
             // Update health text
             std::string format = uiConfig["text"]["format"].get<std::string>();
             std::string healthText = format;
-            
+
             // Replace placeholders
             size_t currentPos = healthText.find("{current}");
             if (currentPos != std::string::npos)
             {
                 healthText.replace(currentPos, 9, std::to_string((int)mobHealth->currentHealth));
             }
-            
+
             size_t maxPos = healthText.find("{max}");
             if (maxPos != std::string::npos)
             {
                 healthText.replace(maxPos, 5, std::to_string((int)mobHealth->maxHealth));
             }
-            
+
             uiText->content = healthText;
-            
+
             // Update color based on health percentage
             float healthPercent = mobHealth->currentHealth / mobHealth->maxHealth;
             uiText->color = getHealthColor(healthPercent, uiConfig);
@@ -110,7 +110,7 @@ void HealthUISystem::createMobKingHealthUI(ECS &ecs, EntityID mobKingEntity, con
 {
     // Get UI configuration from JSON
     json uiConfig = entityFactory->getEntityConfig()["ui"]["mobKingHealth"];
-    
+
     // Create health UI entity
     EntityID healthUIEntity = ecs.createEntity();
 
@@ -123,14 +123,14 @@ void HealthUISystem::createMobKingHealthUI(ECS &ecs, EntityID mobKingEntity, con
     json textConfig = uiConfig["text"];
     std::string format = textConfig["format"].get<std::string>();
     std::string healthText = format;
-    
+
     // Replace placeholders
     size_t currentPos = healthText.find("{current}");
     if (currentPos != std::string::npos)
     {
         healthText.replace(currentPos, 9, std::to_string((int)health.currentHealth));
     }
-    
+
     size_t maxPos = healthText.find("{max}");
     if (maxPos != std::string::npos)
     {
@@ -141,10 +141,10 @@ void HealthUISystem::createMobKingHealthUI(ECS &ecs, EntityID mobKingEntity, con
     float healthPercent = health.currentHealth / health.maxHealth;
     SDL_Color color = getHealthColor(healthPercent, uiConfig);
 
-    UIText uiText(healthText, 
-                  textConfig["font"].get<std::string>(), 
-                  textConfig["fontSize"].get<int>(), 
-                  color, 
+    UIText uiText(healthText,
+                  textConfig["font"].get<std::string>(),
+                  textConfig["fontSize"].get<int>(),
+                  color,
                   true);
     ecs.addComponent(healthUIEntity, uiText);
 
@@ -159,7 +159,7 @@ void HealthUISystem::removeMobKingHealthUI(ECS &ecs, EntityID mobKingEntity)
 {
     auto &healthUIComponents = ecs.getComponents<MobKingHealthUI>();
     std::vector<EntityID> uiToRemove;
-    
+
     for (auto &[uiEntityID, healthUI] : healthUIComponents)
     {
         if (healthUI.mobKingEntity == mobKingEntity)
@@ -167,7 +167,7 @@ void HealthUISystem::removeMobKingHealthUI(ECS &ecs, EntityID mobKingEntity)
             uiToRemove.push_back(uiEntityID);
         }
     }
-    
+
     for (EntityID uiEntityID : uiToRemove)
     {
         ecs.removeEntity(uiEntityID);
@@ -179,12 +179,12 @@ void HealthUISystem::removeAllHealthUI(ECS &ecs)
 {
     auto &healthUIComponents = ecs.getComponents<MobKingHealthUI>();
     std::vector<EntityID> uiToRemove;
-    
+
     for (auto &[uiEntityID, healthUI] : healthUIComponents)
     {
         uiToRemove.push_back(uiEntityID);
     }
-    
+
     for (EntityID uiEntityID : uiToRemove)
     {
         ecs.removeEntity(uiEntityID);
@@ -195,26 +195,26 @@ SDL_Color HealthUISystem::getHealthColor(float healthPercent, const json &config
 {
     json colors = config["colors"];
     json thresholds = config["thresholds"];
-    
+
     if (healthPercent > thresholds["warning"].get<float>())
     {
         // Healthy - white
         json color = colors["healthy"];
-        return {(Uint8)color["r"].get<int>(), (Uint8)color["g"].get<int>(), 
+        return {(Uint8)color["r"].get<int>(), (Uint8)color["g"].get<int>(),
                 (Uint8)color["b"].get<int>(), (Uint8)color["a"].get<int>()};
     }
     else if (healthPercent > thresholds["critical"].get<float>())
     {
         // Warning - yellow
         json color = colors["warning"];
-        return {(Uint8)color["r"].get<int>(), (Uint8)color["g"].get<int>(), 
+        return {(Uint8)color["r"].get<int>(), (Uint8)color["g"].get<int>(),
                 (Uint8)color["b"].get<int>(), (Uint8)color["a"].get<int>()};
     }
     else
     {
         // Critical - red
         json color = colors["critical"];
-        return {(Uint8)color["r"].get<int>(), (Uint8)color["g"].get<int>(), 
+        return {(Uint8)color["r"].get<int>(), (Uint8)color["g"].get<int>(),
                 (Uint8)color["b"].get<int>(), (Uint8)color["a"].get<int>()};
     }
 }

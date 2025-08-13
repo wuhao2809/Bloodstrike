@@ -12,8 +12,9 @@ enum class MenuState
 {
     MAIN_MENU,
     MULTIPLAYER_MENU,
-    LOBBY_WAITING,
-    LOBBY_CONNECTED
+    LOBBY_WAITING,   // Waiting for connection
+    LOBBY_CONNECTED, // Connected, showing ready states
+    LOBBY_COUNTDOWN  // Both ready, countdown to start
 };
 
 class MenuSystem : public System
@@ -28,7 +29,11 @@ private:
     std::vector<std::string> menuOptions;
     std::vector<std::string> menuActions;
     std::vector<EntityID> menuEntityIDs;
+
+    // Network state tracking
+    int lastNetworkState = 0; // Store as int to avoid forward declaration issues
     bool menuEntitiesCreated = false;
+    bool localPlayerReady = false;
 
     // Menu configuration
     json menuConfig;
@@ -60,4 +65,6 @@ private:
     void switchToLobbyWaiting(ECS &ecs);
     void switchToLobbyConnected(ECS &ecs);
     void updateLobbyStatus(ECS &ecs);
+    void createLobbyUI(ECS &ecs);
+    void updateLobbyUI(ECS &ecs);
 };

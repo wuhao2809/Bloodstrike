@@ -1,4 +1,5 @@
 #include "ProjectileSystem.h"
+#include "NetworkSystem.h"
 #include "../components/Components.h"
 #include <iostream>
 
@@ -13,8 +14,13 @@ ProjectileSystem::~ProjectileSystem()
 void ProjectileSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
 {
     moveProjectiles(ecs, deltaTime);
-    checkProjectileLifetime(ecs, deltaTime);
-    handleProjectileCollisions(ecs, gameManager);
+
+    // Step 3: Only host handles projectile lifetime and collisions in multiplayer
+    if (!gameManager.isMultiplayer() || !networkSystem || networkSystem->isHosting())
+    {
+        checkProjectileLifetime(ecs, deltaTime);
+        handleProjectileCollisions(ecs, gameManager);
+    }
 }
 
 void ProjectileSystem::moveProjectiles(ECS &ecs, float deltaTime)
@@ -60,6 +66,17 @@ void ProjectileSystem::checkProjectileLifetime(ECS &ecs, float deltaTime)
     // Remove expired projectiles
     for (EntityID entityID : toRemove)
     {
+        // Step 3: Send entity removal for expired projectiles (host only)
+        if (networkSystem && networkSystem->isHosting())
+        {
+            uint32_t projNetworkID = networkSystem->getNetworkEntityID(entityID);
+            if (projNetworkID != 0)
+            {
+                std::cout << "[HOST] Sending ENTITY_REMOVE for expired projectile, network ID: " << projNetworkID << std::endl;
+                networkSystem->sendEntityRemove(projNetworkID, "projectile");
+            }
+        }
+
         removeProjectile(ecs, entityID);
     }
 }
@@ -105,6 +122,17 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameMan
 
                 if (checkProjectileCollision(*projTransform, *projCollider, *mobTransform, *mobCollider))
                 {
+                    bool mobDestroyed = false;
+
+                    // Step 3: Get network IDs BEFORE removing entities
+                    uint32_t projNetworkID = 0;
+                    uint32_t mobNetworkID = 0;
+                    if (networkSystem && gameManager.isMultiplayer())
+                    {
+                        projNetworkID = networkSystem->getNetworkEntityID(projID);
+                        mobNetworkID = networkSystem->getNetworkEntityID(mobID);
+                    }
+
                     // Check if this mob has health (like Mob King)
                     Health *mobHealth = ecs.getComponent<Health>(mobID);
                     if (mobHealth)
@@ -117,6 +145,7 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameMan
                         // Remove the mob if health drops to 0 or below
                         if (mobHealth->currentHealth <= 0)
                         {
+                            mobDestroyed = true;
                             // Check if this is the Mob King
                             if (ecs.getComponent<MobKing>(mobID))
                             {
@@ -128,8 +157,27 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameMan
                     else
                     {
                         // Regular mob without health - remove immediately
+                        mobDestroyed = true;
                         std::cout << "Player projectile hit mob!" << std::endl;
                         ecs.removeEntity(mobID);
+                    }
+
+                    // Send entity removal messages for collision results
+                    if (networkSystem && gameManager.isMultiplayer())
+                    {
+                        // Send removal messages with network IDs
+                        if (projNetworkID != 0)
+                        {
+                            std::cout << "[HOST] Sending ENTITY_REMOVE for projectile, network ID: " << projNetworkID << std::endl;
+                            networkSystem->sendEntityRemove(projNetworkID, "projectile");
+                        }
+
+                        if (mobDestroyed && mobNetworkID != 0)
+                        {
+                            std::string mobType = ecs.getComponent<MobKing>(mobID) ? "mobKing" : "mob";
+                            std::cout << "[HOST] Sending ENTITY_REMOVE for " << mobType << ", network ID: " << mobNetworkID << std::endl;
+                            networkSystem->sendEntityRemove(mobNetworkID, mobType);
+                        }
                     }
 
                     projectilesToRemove.push_back(projID);
@@ -152,6 +200,18 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameMan
                 if (checkProjectileCollision(*projTransform, *projCollider, *playerTransform, *playerCollider))
                 {
                     std::cout << "Mob projectile hit player! Game Over!" << std::endl;
+
+                    // Step 3: Send entity removal message for projectile
+                    if (networkSystem && gameManager.isMultiplayer())
+                    {
+                        uint32_t projNetworkID = networkSystem->getNetworkEntityID(projID);
+                        if (projNetworkID != 0)
+                        {
+                            std::cout << "[HOST] Sending ENTITY_REMOVE for mob projectile, network ID: " << projNetworkID << std::endl;
+                            networkSystem->sendEntityRemove(projNetworkID, "projectile");
+                        }
+                    }
+
                     projectilesToRemove.push_back(projID);
                     gameManager.gameOver(); // Trigger game over
                     break;

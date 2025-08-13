@@ -88,7 +88,7 @@ struct UIPosition
 struct MobKingHealthUI
 {
     EntityID mobKingEntity; // Reference to the Mob King entity
-    
+
     MobKingHealthUI(EntityID mobKing = 0) : mobKingEntity(mobKing) {}
 };
 

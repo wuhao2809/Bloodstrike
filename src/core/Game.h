@@ -45,7 +45,7 @@ private:
 
     // Bloodstrike 2D Networking Systems
     std::unique_ptr<NetworkSystem> networkSystem;
-    
+
     // Bloodstrike 2D UI Systems
     std::unique_ptr<HealthUISystem> healthUISystem;
 

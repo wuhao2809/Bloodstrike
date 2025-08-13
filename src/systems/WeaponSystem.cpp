@@ -1,4 +1,5 @@
 #include "WeaponSystem.h"
+#include "NetworkSystem.h"
 #include "../components/Components.h"
 #include <SDL2/SDL.h>
 #include <cmath>
@@ -15,8 +16,31 @@ WeaponSystem::~WeaponSystem()
 void WeaponSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
 {
     updateWeaponTimers(ecs, deltaTime);
-    handlePlayerShooting(ecs, deltaTime);
-    handleMobShooting(ecs, gameManager, deltaTime);
+
+    // In multiplayer mode, shooting logic depends on role:
+    // - Host: Handles all shooting (player + mobs) based on inputs
+    // - Client: Only handles player input (which gets sent to Host via InputSystem)
+    if (gameManager.isMultiplayer() && networkSystem)
+    {
+        if (networkSystem->isHosting())
+        {
+            // Host handles all shooting
+            handlePlayerShooting(ecs, gameManager, deltaTime);
+            handleMobShooting(ecs, gameManager, deltaTime);
+        }
+        else
+        {
+            // Client: Only handle player shooting (input will be networked)
+            handlePlayerShooting(ecs, gameManager, deltaTime);
+            // Mobs are controlled by Host, don't handle mob shooting on Client
+        }
+    }
+    else
+    {
+        // Single player or dual player: handle all shooting locally
+        handlePlayerShooting(ecs, gameManager, deltaTime);
+        handleMobShooting(ecs, gameManager, deltaTime);
+    }
 }
 
 void WeaponSystem::updateWeaponTimers(ECS &ecs, float deltaTime)
@@ -37,7 +61,7 @@ void WeaponSystem::updateWeaponTimers(ECS &ecs, float deltaTime)
     }
 }
 
-void WeaponSystem::handlePlayerShooting(ECS &ecs, float deltaTime)
+void WeaponSystem::handlePlayerShooting(ECS &ecs, GameManager &gameManager, float deltaTime)
 {
     if (!isMousePressed())
         return;
@@ -69,7 +93,7 @@ void WeaponSystem::handlePlayerShooting(ECS &ecs, float deltaTime)
         }
 
         // Create projectile
-        EntityID projectileEntity = createProjectile(ecs, transform->x, transform->y,
+        EntityID projectileEntity = createProjectile(ecs, gameManager, transform->x, transform->y,
                                                      dirX, dirY, *weapon, entityID, 500.0f, true);
 
         // Play gun shot sound
@@ -89,7 +113,7 @@ void WeaponSystem::handlePlayerShooting(ECS &ecs, float deltaTime)
     }
 }
 
-EntityID WeaponSystem::createProjectile(ECS &ecs, float startX, float startY,
+EntityID WeaponSystem::createProjectile(ECS &ecs, GameManager &gameManager, float startX, float startY,
                                         float dirX, float dirY, const Weapon &weapon, EntityID owner, float projectileSpeed, bool isPlayerProjectile)
 {
     EntityID projectileEntity = ecs.createEntity();
@@ -121,6 +145,14 @@ EntityID WeaponSystem::createProjectile(ECS &ecs, float startX, float startY,
         ecs.addComponent(projectileEntity, Collider(8.0f, 8.0f, false));
     }
 
+    // Send projectile data over network for multiplayer synchronization
+    if (networkSystem && gameManager.isMultiplayer())
+    {
+        networkSystem->sendProjectileCreate(projectileEntity, owner, startX, startY,
+                                            dirX * projectileSpeed, dirY * projectileSpeed,
+                                            weapon.damage, isPlayerProjectile);
+    }
+
     return projectileEntity;
 }
 
@@ -133,7 +165,7 @@ void WeaponSystem::handleMobShooting(ECS &ecs, GameManager &gameManager, float d
     // Handle Mob King shooting (player-controlled in dual player mode)
     if (gameManager.isDualPlayer())
     {
-        handleMobKingShooting(ecs, deltaTime);
+        handleMobKingShooting(ecs, gameManager, deltaTime);
     }
 
     // Handle regular mob shooting (at level 4 in single player, or in last 15s of dual/multiplayer)
@@ -144,7 +176,7 @@ void WeaponSystem::handleMobShooting(ECS &ecs, GameManager &gameManager, float d
     }
 }
 
-void WeaponSystem::handleMobKingShooting(ECS &ecs, float deltaTime)
+void WeaponSystem::handleMobKingShooting(ECS &ecs, GameManager &gameManager, float deltaTime)
 {
     // Find Mob King entities
     auto &mobKingEntities = ecs.getComponents<MobKing>();
@@ -198,7 +230,7 @@ void WeaponSystem::handleMobKingShooting(ECS &ecs, float deltaTime)
         }
 
         // Create projectile in facing direction
-        EntityID projectileEntity = createProjectile(ecs, transform->x, transform->y,
+        EntityID projectileEntity = createProjectile(ecs, gameManager, transform->x, transform->y,
                                                      dirX, dirY, *weapon, mobKingEntityID, 400.0f, false);
 
         // Update weapon state
@@ -261,7 +293,7 @@ void WeaponSystem::handleRegularMobShooting(ECS &ecs, float deltaTime, GameManag
         float dirY = distY / distance;
 
         // Create projectile targeting player
-        EntityID projectileEntity = createProjectile(ecs, transform->x, transform->y,
+        EntityID projectileEntity = createProjectile(ecs, gameManager, transform->x, transform->y,
                                                      dirX, dirY, *weapon, mobEntityID, 300.0f, false);
 
         // Update weapon state - use different fire rates for dual/multiplayer
@@ -284,4 +316,46 @@ bool WeaponSystem::isMousePressed()
     int mouseX, mouseY;
     Uint32 mouseState = SDL_GetMouseState(&mouseX, &mouseY);
     return (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+}
+
+EntityID WeaponSystem::createProjectileFromNetwork(ECS &ecs, uint32_t projectileID, uint32_t shooterID, float x, float y, float velocityX, float velocityY, float damage, bool fromPlayer)
+{
+    std::cout << "Creating projectile from network: ID=" << projectileID << " from shooter=" << shooterID << " at (" << x << ", " << y << ") velocity=(" << velocityX << ", " << velocityY << ") damage=" << damage << " fromPlayer=" << fromPlayer << std::endl;
+
+    EntityID projectileEntity = ecs.createEntity();
+
+    // Add components to projectile
+    ecs.addComponent(projectileEntity, Transform(x, y, 0.0f));
+
+    // Add velocity from network data
+    ecs.addComponent(projectileEntity, Velocity(velocityX, velocityY));
+
+    // Calculate direction from velocity
+    float speed = std::sqrt(velocityX * velocityX + velocityY * velocityY);
+    float dirX = speed > 0 ? velocityX / speed : 0.0f;
+    float dirY = speed > 0 ? velocityY / speed : 0.0f;
+
+    // Add projectile component with damage and lifetime
+    ecs.addComponent(projectileEntity, Projectile(speed, damage, 3.0f, shooterID, dirX, dirY));
+
+    // Add projectile tag for identification
+    ecs.addComponent(projectileEntity, ProjectileTag{});
+
+    if (fromPlayer)
+    {
+        // Player projectiles: small, white/yellow
+        ecs.addComponent(projectileEntity, Sprite(nullptr, 4, 4, 1, 0.0f));
+        ecs.addComponent(projectileEntity, ProjectileColor(SDL_Color{255, 255, 0, 255})); // Yellow
+        ecs.addComponent(projectileEntity, Collider(4.0f, 4.0f, false));
+    }
+    else
+    {
+        // Mob projectiles: larger, red
+        ecs.addComponent(projectileEntity, Sprite(nullptr, 8, 8, 1, 0.0f));
+        ecs.addComponent(projectileEntity, ProjectileColor(SDL_Color{255, 0, 0, 255})); // Red
+        ecs.addComponent(projectileEntity, Collider(8.0f, 8.0f, false));
+    }
+
+    std::cout << "Network projectile created successfully!" << std::endl;
+    return projectileEntity;
 }
