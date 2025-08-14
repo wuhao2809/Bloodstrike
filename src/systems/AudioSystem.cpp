@@ -171,6 +171,11 @@ void AudioSystem::handleGameStateMusic(GameManager::GameState state)
         stopMusic();
         break;
 
+    case GameManager::COUNTDOWN:
+        // Play background music during countdown
+        playMusic("background", true);
+        break;
+
     case GameManager::PLAYING:
         // Play background music during gameplay
         playMusic("background", true);

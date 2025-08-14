@@ -3,7 +3,7 @@
 
 void GameManager::startDualPlayerGame()
 {
-    currentState = PLAYING;
+    currentState = COUNTDOWN;
     currentGameMode = DUAL_PLAYER_LOCAL;
     score = 0;
     gameTime = 0.0f;
@@ -11,13 +11,15 @@ void GameManager::startDualPlayerGame()
     currentLevel = 1;
     levelTime = 0.0f;
     gameWinner = NONE;
+    countdownTime = 3.0f;
+    countdownNumber = 3;
 
     // Get duration from GameSettings
     const GameSettings &settings = GameSettings::getInstance();
     levelDuration = settings.getDualPlayerLevelDuration();
 
     needsPlayerReset = true; // Request player state reset
-    std::cout << "Starting Dual Player Mode - " << levelDuration << "s battle!" << std::endl;
+    std::cout << "Starting Dual Player Mode countdown..." << std::endl;
 }
 
 void GameManager::startNetworkedMultiplayerGame()

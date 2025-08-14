@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <cmath>
 
 // Forward declare GameSettings to avoid circular dependency
 class GameSettings;
@@ -10,6 +11,7 @@ public:
     enum GameState
     {
         MENU,
+        COUNTDOWN,
         PLAYING,
         LEVEL_COMPLETE,
         GAME_OVER
@@ -37,6 +39,10 @@ public:
     float gameTime = 0.0f;
     float accumulatedScore = 0.0f; // Track fractional score accumulation
     bool needsPlayerReset = false; // Flag to indicate player state should be reset
+
+    // Countdown system for dual player
+    float countdownTime = 3.0f;
+    int countdownNumber = 3;
 
     // Level system
     int currentLevel = 1;
@@ -101,7 +107,28 @@ public:
 
     void updateGameTime(float deltaTime)
     {
-        if (currentState == PLAYING)
+        if (currentState == COUNTDOWN)
+        {
+            countdownTime -= deltaTime;
+            int newCountdownNumber = std::max(0, (int)ceil(countdownTime));
+            
+            if (newCountdownNumber != countdownNumber)
+            {
+                countdownNumber = newCountdownNumber;
+                if (countdownNumber > 0)
+                {
+                    std::cout << "Countdown: " << countdownNumber << std::endl;
+                }
+            }
+            
+            if (countdownTime <= 0.0f)
+            {
+                // Start the actual game
+                currentState = PLAYING;
+                std::cout << "Starting Dual Player Mode - " << levelDuration << "s battle!" << std::endl;
+            }
+        }
+        else if (currentState == PLAYING)
         {
             gameTime += deltaTime;
             levelTime += deltaTime;

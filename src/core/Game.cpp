@@ -10,7 +10,7 @@ Game::Game()
 
 Game::~Game()
 {
-    shutdown();
+    // Destructor - cleanup is handled by shutdown()
 }
 
 bool Game::initialize()
@@ -281,6 +281,9 @@ void Game::gameLoop()
         gameManager.needsPlayerReset = false; // Clear the flag
     }
 
+    // Always update game time for countdown and state management
+    gameManager.updateGameTime(deltaTime);
+
     // 4. Update game logic (only if playing)
     if (gameManager.currentState == GameManager::PLAYING)
     {
@@ -299,9 +302,6 @@ void Game::gameLoop()
 
         if (shouldRunGameLogic)
         {
-            // Update game time and score (Host only in multiplayer)
-            gameManager.updateGameTime(deltaTime);
-
             // Combat systems (Host only in multiplayer)
             aimingSystem->update(ecs, gameManager, deltaTime);
             weaponSystem->update(ecs, gameManager, deltaTime);
@@ -358,7 +358,18 @@ void Game::handleEvents()
         // Handle escape key for quitting
         if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
         {
-            running = false;
+            if (gameManager.currentState == GameManager::COUNTDOWN || 
+                gameManager.currentState == GameManager::PLAYING)
+            {
+                // During countdown or gameplay, return to menu instead of quitting
+                gameManager.reset();
+                gameManager.currentState = GameManager::MENU;
+            }
+            else
+            {
+                // In menu or game over, quit the application
+                running = false;
+            }
         }
     }
 }
@@ -421,6 +432,17 @@ void Game::updateUI()
                 break;
             case GameManager::LEVEL_COMPLETE:
                 uiText.content = "Level " + std::to_string(gameManager.currentLevel) + " Complete! SPACE: Continue | R: Restart";
+                uiText.visible = true;
+                break;
+            case GameManager::COUNTDOWN:
+                if (gameManager.countdownNumber > 0)
+                {
+                    uiText.content = "Get Ready! Player: WASD to move, Left Click to shoot. Mob King: IJKL to move, P to shoot. Starting in " + std::to_string(gameManager.countdownNumber) + "...";
+                }
+                else
+                {
+                    uiText.content = "FIGHT!";
+                }
                 uiText.visible = true;
                 break;
             case GameManager::GAME_OVER:
