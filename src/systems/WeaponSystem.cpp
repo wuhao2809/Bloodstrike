@@ -52,10 +52,24 @@ void WeaponSystem::updateWeaponTimers(ECS &ecs, float deltaTime)
     {
         if (weapon.fireTimer > 0.0f)
         {
+            float oldTimer = weapon.fireTimer;
             weapon.fireTimer -= deltaTime;
+            weapon.canFire = false; // Can't fire while timer is active
+
+            // Debug output for Mob King
+            auto *mobKing = ecs.getComponent<MobKing>(entityID);
+            if (mobKing)
+            {
+                std::cout << "[TIMER] Mob King timer: " << oldTimer << " -> " << weapon.fireTimer << " (delta: " << deltaTime << "), canFire=false" << std::endl;
+            }
+
             if (weapon.fireTimer <= 0.0f)
             {
                 weapon.canFire = true;
+                if (mobKing)
+                {
+                    std::cout << "[TIMER] Mob King can fire again!" << std::endl;
+                }
             }
         }
     }
@@ -198,13 +212,27 @@ void WeaponSystem::handleMobKingShooting(ECS &ecs, GameManager &gameManager, flo
 
         if (gameManager.isMultiplayer())
         {
-            // In multiplayer, shooting is handled by network input (canFire is set by InputSystem)
-            shouldShoot = weapon->canFire;
+            // In multiplayer, check if SPACE key is pressed (like local mode) AND timer allows it
+            bool spacePressed = keyboardState[SDL_SCANCODE_SPACE];
+            bool timerReady = weapon->canFire;
+            shouldShoot = spacePressed && timerReady;
+
+            if (spacePressed)
+            {
+                std::cout << "[HOST] SPACE pressed, canFire=" << timerReady << ", fireTimer=" << weapon->fireTimer << std::endl;
+            }
         }
         else
         {
-            // In local dual player mode, check P key directly
-            shouldShoot = keyboardState[SDL_SCANCODE_P] && weapon->canFire;
+            // In local dual player mode, check P key directly AND timer
+            bool pPressed = keyboardState[SDL_SCANCODE_P];
+            bool timerReady = weapon->canFire;
+            shouldShoot = pPressed && timerReady;
+
+            if (pPressed)
+            {
+                std::cout << "[DUAL] P pressed, canFire=" << timerReady << ", fireTimer=" << weapon->fireTimer << std::endl;
+            }
         }
 
         if (!shouldShoot)
@@ -246,11 +274,11 @@ void WeaponSystem::handleMobKingShooting(ECS &ecs, GameManager &gameManager, flo
         EntityID projectileEntity = createProjectile(ecs, gameManager, transform->x, transform->y,
                                                      dirX, dirY, *weapon, mobKingEntityID, 400.0f, false);
 
-        // Update weapon state
-        weapon->fireTimer = 1.0f / weapon->fireRate;
+        // Update weapon state - use JSON config fire rate (2.0 = 0.5s between shots)
+        weapon->fireTimer = 1.0f / weapon->fireRate; // Time between shots from config
         weapon->canFire = false;
 
-        std::cout << "Mob King fired! Direction: (" << dirX << ", " << dirY << ")" << std::endl;
+        std::cout << "Mob King fired! Direction: (" << dirX << ", " << dirY << "), fireTimer set to: " << weapon->fireTimer << std::endl;
 
         // In multiplayer mode, the createProjectile method automatically sends network data
         // This ensures both host and client see the Mob King's projectiles

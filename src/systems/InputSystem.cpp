@@ -477,20 +477,20 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, NetworkSystem *netw
                         float speedValue = speed->value;
                         transform->x += velocity->x * speedValue * deltaTime;
                         transform->y += velocity->y * speedValue * deltaTime;
-                        
+
                         // Send position update to host (throttled to reduce network traffic)
                         static float mobKingPositionTimer = 0.0f;
                         mobKingPositionTimer += deltaTime;
-                        
+
                         if (mobKingPositionTimer >= 0.033f) // ~30 FPS
                         {
-                            networkSystem->sendEntityPositionUpdate(entityID, transform->x, transform->y, 
-                                                                   velocity->x, velocity->y, "mobKing");
-                            std::cout << "[CLIENT] Sending Mob King position: (" << transform->x << ", " << transform->y 
+                            networkSystem->sendEntityPositionUpdate(entityID, transform->x, transform->y,
+                                                                    velocity->x, velocity->y, "mobKing");
+                            std::cout << "[CLIENT] Sending Mob King position: (" << transform->x << ", " << transform->y
                                       << "), vel(" << velocity->x << ", " << velocity->y << ")" << std::endl;
                             mobKingPositionTimer = 0.0f;
                         }
-                        
+
                         // Handle shooting separately
                         if (shooting)
                         {
@@ -520,21 +520,9 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, NetworkSystem *netw
                 std::cout << "[HOST] Received Mob King shooting input: shoot=" << inputData.shooting << std::endl;
 
                 // Apply shooting only (position is handled via ENTITY_POSITION_UPDATE)
-                auto &mobKingEntities = ecs.getComponents<MobKing>();
-                for (auto &[entityID, mobKing] : mobKingEntities)
-                {
-                    // Handle shooting only
-                    if (inputData.shooting)
-                    {
-                        auto *weapon = ecs.getComponent<Weapon>(entityID);
-                        if (weapon)
-                        {
-                            weapon->canFire = true; // Enable shooting
-                            std::cout << "[HOST] Mob King shooting enabled!" << std::endl;
-                        }
-                    }
-                    break;
-                }
+                // Shooting is now handled directly in WeaponSystem by checking SPACE key
+                // No need to process shooting input here
+                std::cout << "[HOST] Received Mob King shooting input (handled by WeaponSystem)" << std::endl;
             }
         }
     }
