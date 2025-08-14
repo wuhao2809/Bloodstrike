@@ -102,7 +102,8 @@ void RenderSystem::renderSprites(ECS &ecs)
             }
             else if (entityType && entityType->type == "mobKing")
             {
-                // For Mob King, use flying enemy texture to make it more visible
+                // For Mob King, check movement direction and animation frame
+                auto *movementDir = ecs.getComponent<MovementDirection>(entityID);
                 int frameNumber = 1; // Default to frame 1
 
                 // Get current animation frame
@@ -111,9 +112,16 @@ void RenderSystem::renderSprites(ECS &ecs)
                     frameNumber = (animation->currentFrame % sprite->frameCount) + 1;
                 }
 
-                texturePath = "art/enemyFlyingAlt_" + std::to_string(frameNumber) + ".png";
+                if (movementDir && movementDir->direction == MovementDirection::VERTICAL)
+                {
+                    texturePath = "art/enemyFlyingUp_" + std::to_string(frameNumber) + ".png";
+                }
+                else
+                {
+                    texturePath = "art/enemyFlyingAlt_" + std::to_string(frameNumber) + ".png";
+                }
 
-                // Always reload texture to handle animation changes
+                // Always reload texture to handle animation and direction changes
                 needsTextureReload = true;
             } // Load or reload texture if needed
             if (needsTextureReload && !texturePath.empty())
@@ -161,8 +169,17 @@ void RenderSystem::renderSprites(ECS &ecs)
                         {
                             flipFlags = SDL_FLIP_HORIZONTAL; // Flip when moving left (since sprites face right by default)
                         }
-                        else if (movementDir->direction == MovementDirection::VERTICAL)
+                        else if (movementDir->direction == MovementDirection::VERTICAL && entityType->type == "mobKing")
                         {
+                            if (velocity->y > 0)
+                            {
+                                flipFlags = SDL_FLIP_VERTICAL; // Flip when moving down (enemyFlyingUp sprites face up by default)
+                            }
+                            // When moving up (velocity->y < 0), use normal orientation (no flip)
+                        }
+                        else if (movementDir->direction == MovementDirection::VERTICAL && entityType->type != "mobKing")
+                        {
+                            // For regular mobs, keep the original logic
                             if (velocity->y < 0)
                             {
                                 flipFlags = SDL_FLIP_VERTICAL; // Flip when moving up

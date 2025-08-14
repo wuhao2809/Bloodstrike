@@ -259,8 +259,8 @@ void MobSpawningSystem::spawnMobKing(ECS &ecs, GameManager &gameManager)
     // Add MovementDirection component
     ecs.addComponent(mobKingEntity, MovementDirection(MovementDirection::HORIZONTAL));
 
-    // Create Sprite component
-    json spriteConfig = mobKingConfig["sprite"];
+    // Create Sprite component (start with horizontal sprite)
+    json spriteConfig = mobKingConfig["sprites"]["horizontal"];
     Sprite sprite;
     sprite.texture = nullptr; // Will be loaded by ResourceManager in RenderSystem
     sprite.width = spriteConfig["width"].get<int>();
@@ -385,7 +385,18 @@ EntityID MobSpawningSystem::createMobFromNetwork(ECS &ecs, uint32_t mobID, float
     ecs.addComponent(mobEntity, MovementDirection(facingDirection));
 
     // Create Sprite component
-    json spriteConfig = mobConfig["sprite"];
+    json spriteConfig;
+    if (mobType == "mobKing")
+    {
+        // Mob King uses sprites structure with horizontal/vertical
+        spriteConfig = mobConfig["sprites"]["horizontal"]; // Start with horizontal
+    }
+    else
+    {
+        // Regular mobs use single sprite config
+        spriteConfig = mobConfig["sprite"];
+    }
+
     Sprite sprite;
     sprite.texture = nullptr; // Will be loaded by ResourceManager in RenderSystem
     sprite.width = spriteConfig["width"].get<int>();

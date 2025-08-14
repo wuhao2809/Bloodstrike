@@ -90,13 +90,23 @@
       "speedRange": { "min": 120.0, "max": 180.0 }
     },
     "mobKing": {
-      "sprite": {
-        "texture": "art/enemyFlyingAlt_1.png",
-        "width": 160,
-        "height": 160,
-        "frameCount": 2,
-        "frameTime": 0.2,
-        "animated": true
+      "sprites": {
+        "horizontal": {
+          "texture": "art/enemyFlyingAlt_1.png",
+          "width": 160,
+          "height": 160,
+          "frameCount": 2,
+          "frameTime": 0.2,
+          "animated": true
+        },
+        "vertical": {
+          "texture": "art/enemyFlyingUp_1.png",
+          "width": 160,
+          "height": 160,
+          "frameCount": 2,
+          "frameTime": 0.2,
+          "animated": true
+        }
       },
       "collider": {
         "width": 130,
