@@ -334,6 +334,13 @@ EntityID MobSpawningSystem::createMobFromNetwork(ECS &ecs, uint32_t mobID, float
     // Create mob entity with specified ID (if the ECS supports it) or create new one
     EntityID mobEntity = ecs.createEntity(); // Note: ideally we'd use the provided mobID for consistency
 
+    // Special handling for Mob King
+    if (mobType == "mobKing")
+    {
+        // Add MobKing component (special marker for the boss)
+        ecs.addComponent(mobEntity, MobKing{});
+    }
+
     // Add MobTag component
     ecs.addComponent(mobEntity, MobTag{});
 
@@ -409,6 +416,31 @@ EntityID MobSpawningSystem::createMobFromNetwork(ECS &ecs, uint32_t mobID, float
     Speed speedComponent;
     speedComponent.value = velocityMagnitude; // This is the actual final speed from host
     ecs.addComponent(mobEntity, speedComponent);
+
+    // Special components for Mob King
+    if (mobType == "mobKing")
+    {
+        // Add Health component (boss has health)
+        Health health;
+        health.currentHealth = mobConfig["combat"]["health"].get<float>();
+        health.maxHealth = health.currentHealth;
+        ecs.addComponent(mobEntity, health);
+
+        // Add weapon component (boss can always shoot)
+        json combatConfig = mobConfig["combat"];
+        Weapon weapon;
+        weapon.damage = combatConfig["damage"].get<float>();
+        weapon.range = combatConfig["range"].get<float>();
+        weapon.fireRate = combatConfig["fireRate"].get<float>();
+        weapon.fireTimer = 0.0f;
+        weapon.canFire = true;
+        weapon.ammoCount = 999; // Unlimited ammo
+        weapon.maxAmmo = 999;
+        ecs.addComponent(mobEntity, weapon);
+
+        std::cout << "[CLIENT] Created Mob King with " << health.currentHealth << "/" << health.maxHealth
+                  << " health and combat abilities!" << std::endl;
+    }
 
     // Note: Weapon components will be added based on game state timing by other systems
 

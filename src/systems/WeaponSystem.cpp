@@ -192,9 +192,22 @@ void WeaponSystem::handleMobKingShooting(ECS &ecs, GameManager &gameManager, flo
         if (!weapon->canFire)
             continue;
 
-        // Get keyboard state to check for P key
+        // Get keyboard state to check for shooting key
         const Uint8 *keyboardState = SDL_GetKeyboardState(nullptr);
-        if (!keyboardState[SDL_SCANCODE_P])
+        bool shouldShoot = false;
+
+        if (gameManager.isMultiplayer())
+        {
+            // In multiplayer, shooting is handled by network input (canFire is set by InputSystem)
+            shouldShoot = weapon->canFire;
+        }
+        else
+        {
+            // In local dual player mode, check P key directly
+            shouldShoot = keyboardState[SDL_SCANCODE_P] && weapon->canFire;
+        }
+
+        if (!shouldShoot)
             continue;
 
         // Determine shooting direction based on movement direction
@@ -238,6 +251,9 @@ void WeaponSystem::handleMobKingShooting(ECS &ecs, GameManager &gameManager, flo
         weapon->canFire = false;
 
         std::cout << "Mob King fired! Direction: (" << dirX << ", " << dirY << ")" << std::endl;
+
+        // In multiplayer mode, the createProjectile method automatically sends network data
+        // This ensures both host and client see the Mob King's projectiles
     }
 }
 

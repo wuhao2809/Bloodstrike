@@ -2,6 +2,7 @@
 #include "NetworkSystem.h"
 #include "../components/Components.h"
 #include <vector>
+#include <cmath>
 
 InputSystem::InputSystem()
 {
@@ -134,9 +135,10 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
             }
         }
 
-        // Handle Mob King input (IJKL movement, P to shoot) - only in dual player mode
-        if (gameManager.isDualPlayer())
+        // Handle Mob King input - controls depend on game mode
+        if (gameManager.isDualPlayer() && !gameManager.isMultiplayer())
         {
+            // LOCAL DUAL PLAYER MODE ONLY: IJKL movement, P to shoot
             auto &mobKingEntities = ecs.getComponents<MobKing>();
 
             for (auto &[entityID, mobKing] : mobKingEntities)
@@ -154,7 +156,7 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
                 bool movingHorizontal = false;
                 bool movingVertical = false;
 
-                // IJKL movement for Mob King (I=up, J=left, K=down, L=right)
+                // DUAL PLAYER LOCAL MODE: IJKL movement, P to shoot
                 if (keyboardState[SDL_SCANCODE_J]) // Left
                 {
                     velocity->x = -1.0f;
@@ -201,12 +203,9 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, float deltaTime)
                     velocity->y *= 0.707f;
                 }
 
-                // P key to shoot (handle in weapon system - just set facing direction)
-                // The actual shooting will be handled by the weapon system
+                // P key to shoot - handle directly in local mode
                 if (keyboardState[SDL_SCANCODE_P])
                 {
-                    // Set a flag or component to indicate Mob King wants to shoot
-                    // This will be picked up by the weapon system
                     auto *weapon = ecs.getComponent<Weapon>(entityID);
                     if (weapon)
                     {
@@ -376,10 +375,131 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, NetworkSystem *netw
                 // Position sync is handled by sendEntityPositionUpdate above
                 break;
             }
+
+            // HOST does NOT control Mob King - it only receives input from client
         }
         else
         {
-            // STEP 1: Client does NO input processing - just receives updates
+            // CLIENT - Handle Mob King input and send to host
+            if (gameManager.isDualPlayer())
+            {
+                auto &mobKingEntities = ecs.getComponents<MobKing>();
+                std::cout << "[CLIENT DEBUG] Found " << mobKingEntities.size() << " mob king entities" << std::endl;
+
+                for (auto &[entityID, mobKing] : mobKingEntities)
+                {
+                    auto *velocity = ecs.getComponent<Velocity>(entityID);
+                    auto *movementDir = ecs.getComponent<MovementDirection>(entityID);
+                    if (!velocity)
+                        continue;
+
+                    // Reset velocity
+                    velocity->x = 0;
+                    velocity->y = 0;
+
+                    // Track which directions are pressed
+                    bool movingHorizontal = false;
+                    bool movingVertical = false;
+                    bool shooting = false;
+
+                    // Debug keyboard state
+                    bool wPressed = keyboardState[SDL_SCANCODE_W];
+                    bool aPressed = keyboardState[SDL_SCANCODE_A];
+                    bool sPressed = keyboardState[SDL_SCANCODE_S];
+                    bool dPressed = keyboardState[SDL_SCANCODE_D];
+                    bool spacePressed = keyboardState[SDL_SCANCODE_SPACE];
+
+                    if (wPressed || aPressed || sPressed || dPressed || spacePressed)
+                    {
+                        std::cout << "[CLIENT DEBUG] Keys pressed: W=" << wPressed << " A=" << aPressed
+                                  << " S=" << sPressed << " D=" << dPressed << " SPACE=" << spacePressed << std::endl;
+                    }
+
+                    // MULTIPLAYER MODE: WASD movement, SPACE to shoot
+                    if (keyboardState[SDL_SCANCODE_A]) // Left
+                    {
+                        velocity->x = -1.0f;
+                        movingHorizontal = true;
+                    }
+                    if (keyboardState[SDL_SCANCODE_D]) // Right
+                    {
+                        velocity->x = 1.0f;
+                        movingHorizontal = true;
+                    }
+                    if (keyboardState[SDL_SCANCODE_W]) // Up
+                    {
+                        velocity->y = -1.0f;
+                        movingVertical = true;
+                    }
+                    if (keyboardState[SDL_SCANCODE_S]) // Down
+                    {
+                        velocity->y = 1.0f;
+                        movingVertical = true;
+                    }
+
+                    // SPACE key to shoot
+                    if (keyboardState[SDL_SCANCODE_SPACE])
+                    {
+                        shooting = true;
+                    }
+
+                    // Set movement direction for sprite selection
+                    if (movementDir && (movingHorizontal || movingVertical))
+                    {
+                        if (movingHorizontal && !movingVertical)
+                        {
+                            movementDir->direction = MovementDirection::HORIZONTAL;
+                        }
+                        else if (movingVertical && !movingHorizontal)
+                        {
+                            movementDir->direction = MovementDirection::VERTICAL;
+                        }
+                        // For diagonal movement, prioritize horizontal sprite
+                        else if (movingHorizontal && movingVertical)
+                        {
+                            movementDir->direction = MovementDirection::HORIZONTAL;
+                        }
+                    }
+
+                    // Normalize diagonal movement
+                    if (velocity->x != 0 && velocity->y != 0)
+                    {
+                        velocity->x *= 0.707f; // 1/sqrt(2)
+                        velocity->y *= 0.707f;
+                    }
+
+                    // Apply movement locally on client and send position to host
+                    auto *transform = ecs.getComponent<Transform>(entityID);
+                    auto *speed = ecs.getComponent<Speed>(entityID);
+                    if (transform && speed)
+                    {
+                        // Apply movement locally (client-side prediction)
+                        float speedValue = speed->value;
+                        transform->x += velocity->x * speedValue * deltaTime;
+                        transform->y += velocity->y * speedValue * deltaTime;
+                        
+                        // Send position update to host (throttled to reduce network traffic)
+                        static float mobKingPositionTimer = 0.0f;
+                        mobKingPositionTimer += deltaTime;
+                        
+                        if (mobKingPositionTimer >= 0.033f) // ~30 FPS
+                        {
+                            networkSystem->sendEntityPositionUpdate(entityID, transform->x, transform->y, 
+                                                                   velocity->x, velocity->y, "mobKing");
+                            std::cout << "[CLIENT] Sending Mob King position: (" << transform->x << ", " << transform->y 
+                                      << "), vel(" << velocity->x << ", " << velocity->y << ")" << std::endl;
+                            mobKingPositionTimer = 0.0f;
+                        }
+                        
+                        // Handle shooting separately
+                        if (shooting)
+                        {
+                            networkSystem->sendMobKingInput(0, 0, shooting); // Only send shooting command
+                        }
+                    }
+                    break;
+                }
+            }
             // (No debug output to avoid spam)
         }
 
@@ -393,21 +513,26 @@ void InputSystem::update(ECS &ecs, GameManager &gameManager, NetworkSystem *netw
 
             if (message.type == MessageType::MOB_KING_INPUT && isHost)
             {
-                // Host receives mob king input from client
+                // Host receives mob king input from client (only for shooting now)
                 MobKingInputData inputData;
                 memcpy(&inputData, message.data, sizeof(MobKingInputData));
 
-                // Apply to local mob king entity
+                std::cout << "[HOST] Received Mob King shooting input: shoot=" << inputData.shooting << std::endl;
+
+                // Apply shooting only (position is handled via ENTITY_POSITION_UPDATE)
                 auto &mobKingEntities = ecs.getComponents<MobKing>();
                 for (auto &[entityID, mobKing] : mobKingEntities)
                 {
-                    auto *velocity = ecs.getComponent<Velocity>(entityID);
-                    if (velocity)
+                    // Handle shooting only
+                    if (inputData.shooting)
                     {
-                        velocity->x = inputData.velocityX;
-                        velocity->y = inputData.velocityY;
+                        auto *weapon = ecs.getComponent<Weapon>(entityID);
+                        if (weapon)
+                        {
+                            weapon->canFire = true; // Enable shooting
+                            std::cout << "[HOST] Mob King shooting enabled!" << std::endl;
+                        }
                     }
-                    // TODO: Handle shooting
                     break;
                 }
             }
