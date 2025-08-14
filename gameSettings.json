@@ -29,7 +29,7 @@
       }
     },
     "dualPlayer": {
-      "levelDuration": 20.0,
+      "levelDuration": 30.0,
       "maxLevel": 1,
       "mobSpawnInterval": {
         "start": 1.0,
@@ -40,7 +40,7 @@
         "end": 2.0
       },
       "mobShootingSettings": {
-        "enabledInLastSeconds": 15.0,
+        "enabledInLastSeconds": 10.0,
         "fireRateMultiplier": 1.0
       },
       "scorePerSecond": 15.0,

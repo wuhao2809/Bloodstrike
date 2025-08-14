@@ -424,7 +424,27 @@ void Game::updateUI()
                 uiText.visible = true;
                 break;
             case GameManager::GAME_OVER:
-                uiText.content = "Game Over! Press SPACE to restart";
+                if (gameManager.isDualPlayer())
+                {
+                    // Dual player mode - show winner
+                    switch (gameManager.gameWinner)
+                    {
+                    case GameManager::PLAYER:
+                        uiText.content = "Player Wins! Press SPACE to restart";
+                        break;
+                    case GameManager::MOB_KING:
+                        uiText.content = "Mob King Wins! Press SPACE to restart";
+                        break;
+                    default:
+                        uiText.content = "Game Over! Press SPACE to restart";
+                        break;
+                    }
+                }
+                else
+                {
+                    // Single player mode
+                    uiText.content = "Game Over! Press SPACE to restart";
+                }
                 uiText.visible = true;
                 break;
             }

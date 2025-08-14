@@ -149,7 +149,15 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameMan
                             // Check if this is the Mob King
                             if (ecs.getComponent<MobKing>(mobID))
                             {
-                                std::cout << "Mob King defeated! Victory!" << std::endl;
+                                if (gameManager.isDualPlayer())
+                                {
+                                    std::cout << "Mob King defeated! Player Wins!" << std::endl;
+                                    gameManager.gameOver(GameManager::PLAYER);
+                                }
+                                else
+                                {
+                                    std::cout << "Mob King defeated! Victory!" << std::endl;
+                                }
                             }
                             ecs.removeEntity(mobID);
                         }
@@ -199,7 +207,16 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameMan
 
                 if (checkProjectileCollision(*projTransform, *projCollider, *playerTransform, *playerCollider))
                 {
-                    std::cout << "Mob projectile hit player! Game Over!" << std::endl;
+                    if (gameManager.isDualPlayer())
+                    {
+                        std::cout << "Mob projectile hit player! Mob King Wins!" << std::endl;
+                        gameManager.gameOver(GameManager::MOB_KING);
+                    }
+                    else
+                    {
+                        std::cout << "Mob projectile hit player! Game Over!" << std::endl;
+                        gameManager.gameOver();
+                    }
 
                     // Step 3: Send entity removal message for projectile
                     if (networkSystem && gameManager.isMultiplayer())
@@ -213,7 +230,6 @@ void ProjectileSystem::handleProjectileCollisions(ECS &ecs, GameManager &gameMan
                     }
 
                     projectilesToRemove.push_back(projID);
-                    gameManager.gameOver(); // Trigger game over
                     break;
                 }
             }

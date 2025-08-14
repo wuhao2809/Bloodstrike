@@ -22,8 +22,17 @@ public:
         MULTIPLAYER_ONLINE
     };
 
+    enum Winner
+    {
+        NONE,
+        PLAYER,
+        MOB_KING,
+        TIME_UP
+    };
+
     GameState currentState = MENU;
     GameMode currentGameMode = SINGLE_PLAYER;
+    Winner gameWinner = NONE;
     int score = 0;
     float gameTime = 0.0f;
     float accumulatedScore = 0.0f; // Track fractional score accumulation
@@ -52,6 +61,7 @@ public:
         levelTime = 0.0f;
         currentState = MENU;
         currentGameMode = SINGLE_PLAYER;
+        gameWinner = NONE;
     }
 
     void startGame()
@@ -63,6 +73,7 @@ public:
         accumulatedScore = 0.0f;
         currentLevel = 1;
         levelTime = 0.0f;
+        gameWinner = NONE;
         needsPlayerReset = true; // Request player state reset
     }
 
@@ -70,9 +81,10 @@ public:
 
     void startNetworkedMultiplayerGame();
 
-    void gameOver()
+    void gameOver(Winner winner = NONE)
     {
         currentState = GAME_OVER;
+        gameWinner = winner;
     }
 
     void continueToNextLevel()
@@ -100,8 +112,8 @@ public:
                 // Dual/Multiplayer: 120-second countdown, game ends when time is up
                 if (levelTime >= levelDuration)
                 {
-                    std::cout << "Time up! Game Over!" << std::endl;
-                    gameOver();
+                    std::cout << "Time up! Player Wins!" << std::endl;
+                    gameOver(PLAYER); // Player wins when time runs out
                     return;
                 }
             }

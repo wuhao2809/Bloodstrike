@@ -10,6 +10,7 @@ void GameManager::startDualPlayerGame()
     accumulatedScore = 0.0f;
     currentLevel = 1;
     levelTime = 0.0f;
+    gameWinner = NONE;
 
     // Get duration from GameSettings
     const GameSettings &settings = GameSettings::getInstance();

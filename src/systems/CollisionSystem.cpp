@@ -65,16 +65,22 @@ bool CollisionSystem::checkCollision(const Transform &pos1, const Collider &col1
 void CollisionSystem::handlePlayerMobCollision(ECS &ecs, GameManager &gameManager,
                                                EntityID playerEntity, EntityID mobEntity)
 {
-    std::cout << "Player hit by mob! Game Over!" << std::endl;
+    if (gameManager.isDualPlayer())
+    {
+        std::cout << "Player hit by mob! Mob King Wins!" << std::endl;
+        gameManager.gameOver(GameManager::MOB_KING);
+    }
+    else
+    {
+        std::cout << "Player hit by mob! Game Over!" << std::endl;
+        gameManager.gameOver();
+    }
 
     // Play death sound effect
     if (audioSystem)
     {
         audioSystem->playSound("gameover");
     }
-
-    // Change game state to game over
-    gameManager.currentState = GameManager::GAME_OVER;
 
     // Optional: Remove the mob entity that caused the collision
     ecs.removeEntity(mobEntity);
